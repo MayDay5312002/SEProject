@@ -6,7 +6,6 @@ __pycache__/
 db.sqlite3
 n_cookies.txt
 main.js
-main.js.*
 
 # React build
 node_modules/

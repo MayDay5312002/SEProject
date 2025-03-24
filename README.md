@@ -5,4 +5,6 @@ Instructions for development:
    `venv\Scripts\activate`
 3. Go to the Frontend app or  folder then run:
    `npm install`
+4. Run the server:
+   `python manage.py runserver`
    

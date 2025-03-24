@@ -5,6 +5,8 @@ Instructions for development:
    `venv\Scripts\activate`
 3. Go to the Frontend app or  folder then run:
    `npm install`
-4. Run the server:
+4. Run the development server for react:\n
+   `npn run dev`
+6. Run the Django server:
    `python manage.py runserver`
    

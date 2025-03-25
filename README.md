@@ -17,4 +17,6 @@ Instructions for development:
 6. Run the Django server:
    `python manage.py runserver`
 7. Start development
+
+- Note: Ensure you are not in main branch. `git branch` to see which branch you are in.
    

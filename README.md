@@ -18,5 +18,5 @@ Instructions for development:
    `python manage.py runserver`
 7. Start development
 
-- Note: Ensure you are not in main branch. `git branch` to see which branch you are in.
+- Note: Ensure you are not in main branch. `git branch` to see which branch you are in. `git checkout nameOfBranch` to switch branch.
    

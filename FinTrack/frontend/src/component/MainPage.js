@@ -1,5 +1,5 @@
 import React from "react";
-import { CircularProgress, AppBar, Typography, Toolbar, Box, Button, Menu, MenuItem } from "@mui/material";
+import { AppBar, Typography, Toolbar, Box, Button, Menu, MenuItem } from "@mui/material";
 
 function MainPage() {
     return (
@@ -30,12 +30,12 @@ function MainPage() {
             <Button color="inherit" onClick={console.log("Services")}>Services</Button>
             <Button color="inherit" onClick={console.log("Logout")}>Logout</Button>
           </Box>
-          <Button
+          {/* <Button
             id="basic-button"
             aria-controls={open ? 'basic-menu' : undefined}
             aria-haspopup="true"
             aria-expanded={open ? 'true' : undefined}
-            onClick={handleClick}
+            onClick={console.log("Hello World")}
             color="inherit"
             sx={{
               display: {xs: 'block', sm: 'none'}
@@ -54,7 +54,7 @@ function MainPage() {
             <MenuItem onClick={console.log("About")}>About</MenuItem>
             <MenuItem onClick={console.log("Services")}>Services</MenuItem>
             <MenuItem onClick={console.log("logout")}>Logout</MenuItem>
-          </Menu>
+          </Menu> */}
         </Toolbar>
       </AppBar>
     );

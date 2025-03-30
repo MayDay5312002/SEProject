@@ -1,7 +1,17 @@
 import React from "react";
+import { useState, use} from "react";
 import { AppBar, Typography, Toolbar, Box, Button, Menu, MenuItem } from "@mui/material";
 
 function MainPage() {
+    const navigate = useNavigate();
+    const [loading, setLoading] = useState(true);
+
+    const [anchorEl, setAnchorEl] = useState(null);
+    const open = Boolean(anchorEl);
+
+    const [AboutSt, setAboutSt] = useState(false);
+    const [ServicesSt, setServicesSt] = useState(false);
+    const [MainAppSt, setMainAppSt] = useState(true);
     return (
         <AppBar position="sticky" sx={{ bgcolor: "black", py: 2 }}>
         <Toolbar>
@@ -25,12 +35,12 @@ function MainPage() {
 
 
           <Box sx={{ display: {xs: 'none', sm: 'flex'} }}>
-            <Button color="inherit" onClick={console.log("Home")}>Home</Button>
+            <Button color="inherit" onClick={console.log("Home Test")}>Home</Button>
             <Button color="inherit" onClick={console.log("About")}>About</Button>
             <Button color="inherit" onClick={console.log("Services")}>Services</Button>
             <Button color="inherit" onClick={console.log("Logout")}>Logout</Button>
           </Box>
-          {/* <Button
+          <Button
             id="basic-button"
             aria-controls={open ? 'basic-menu' : undefined}
             aria-haspopup="true"
@@ -54,7 +64,7 @@ function MainPage() {
             <MenuItem onClick={console.log("About")}>About</MenuItem>
             <MenuItem onClick={console.log("Services")}>Services</MenuItem>
             <MenuItem onClick={console.log("logout")}>Logout</MenuItem>
-          </Menu> */}
+          </Menu>
         </Toolbar>
       </AppBar>
     );

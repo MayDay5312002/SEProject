@@ -90,11 +90,11 @@ WSGI_APPLICATION = 'FinTrack.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'SEJobs',
-        'USER': "LinkedIn",
-        'PASSWORD': "Rat531!",
-        'HOST': "localhost",
-        'PORT': "3306",
+        'NAME': os.getenv("dbname"),
+        'USER': os.getenv("dbuser"),
+        'PASSWORD': os.getenv("dbpassword"),
+        'HOST': os.getenv("dbhost"),
+        'PORT': os.getenv("dbport"),
 
     }
 }

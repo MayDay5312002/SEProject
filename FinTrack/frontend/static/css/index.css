@@ -5,6 +5,7 @@ html, body {
     height: 100%;
     margin: 0;
     padding: 0;
+    background-color: #d8f8ff; /* Light background color for the entire page */
 }
 
 #main {
@@ -16,4 +17,12 @@ html, body {
     width: 100%;
     min-height: 100vh;
     
+}
+
+.blue1 {
+    color: #03045e;
+}
+
+.blue2 {
+    color: #0077b6; /* This is a darker blue for secondary elements */
 }

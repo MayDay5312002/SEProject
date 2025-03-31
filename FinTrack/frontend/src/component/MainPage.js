@@ -51,7 +51,7 @@ function MainPage() {
 
     return (
         <div>
-        <AppBar position="sticky" sx={{ bgcolor: "black", py: 2 }}>
+        <AppBar position="sticky" sx={{ bgcolor: "0077b6", py: 2 }}>
         <Toolbar>
           {/* Logo or app name */}
           <Typography

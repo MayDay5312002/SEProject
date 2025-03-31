@@ -12,7 +12,7 @@ const developers = [
 const About = () => {
   return (
     <Container maxWidth="md" sx={{ textAlign: "center", mt: 5}}>
-      <Typography variant="h3" gutterBottom className="blue2" sx={{fontWeight: "500"}}>About Us</Typography>
+      <Typography variant="h4" gutterBottom className="blue2" sx={{fontWeight: "600"}}>About Us</Typography>
       <Typography variant="h6" sx={{my: 3}} className="blue2">
         We are a passionate team dedicated to building innovative solutions. Our mission is to create 
         user-friendly applications that enhance everyday experiences.

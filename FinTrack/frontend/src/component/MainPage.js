@@ -3,6 +3,9 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AppBar, Typography, Toolbar, Box, Button, Menu, MenuItem } from "@mui/material";
 import About from "./About";
+import Service from "./Service";
+import MainApp from "./mainApp";
+
 
 
 function MainPage() {
@@ -61,7 +64,7 @@ function MainPage() {
               mr: 2,
               fontFamily: 'monospace',
               fontWeight: 700,
-              letterSpacing: '.15em',
+              letterSpacing: '0.01em',
               color: 'inherit',
               textDecoration: 'none',
               // cursor: 'pointer',
@@ -73,9 +76,9 @@ function MainPage() {
 
 
           <Box sx={{ display: {xs: 'none', sm: 'flex'} }}>
-            <Button color="inherit" onClick={console.log("Home Test")}>Home</Button>
+            <Button color="inherit" onClick={handleClickMainApp}>Home</Button>
             <Button color="inherit" onClick={handleClickAbout}>About</Button>
-            <Button color="inherit" onClick={console.log("Services")}>Services</Button>
+            <Button color="inherit" onClick={handleClickServices}>Services</Button>
             <Button color="inherit" onClick={handleLogout}>Logout</Button>
           </Box>
           <Button
@@ -98,18 +101,18 @@ function MainPage() {
             onClose={handleClose}
             sx={{display: {sm: 'none'}}}
           >
-            <MenuItem onClick={console.log("Menu")}>Home</MenuItem>
+            <MenuItem onClick={handleClickMainApp}>Home</MenuItem>
             <MenuItem onClick={handleClickAbout}>About</MenuItem>
-            <MenuItem onClick={console.log("Services")}>Services</MenuItem>
-            <MenuItem onClick={console.log("logout")}>Logout</MenuItem>
+            <MenuItem onClick={handleClickServices}>Services</MenuItem>
+            <MenuItem onClick={handleLogout}>Logout</MenuItem>
           </Menu>
         </Toolbar>
       </AppBar>
 
       <div>
-        {/* {MainAppSt && <MainApp />} */}
+        {MainAppSt && <MainApp />}
         {AboutSt && <About />}
-        {/* {ServicesSt && <Services />} */}
+        {ServicesSt && <Service />}
       </div>
       
     </div>

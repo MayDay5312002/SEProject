@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AppBar, Typography, Toolbar, Box, Button, Menu, MenuItem } from "@mui/material";
 import About from "./About";
-import Service from "./Service";
+import Setting from "./Setting";
 import MainApp from "./mainApp";
 
 
@@ -16,25 +16,25 @@ function MainPage() {
     const open = Boolean(anchorEl);
 
     const [AboutSt, setAboutSt] = useState(false);
-    const [ServicesSt, setServicesSt] = useState(false);
+    const [SettingSt, setSettingSt] = useState(false);
     const [MainAppSt, setMainAppSt] = useState(true);
 
     const handleClickAbout = () => {
         setMainAppSt(false);
         setAboutSt(true);
-        setServicesSt(false);
+        setSettingSt(false);
       }
     
       const handleClickServices = () => {
         setMainAppSt(false);
         setAboutSt(false);
-        setServicesSt(true);
+        setSettingSt(true);
       }
     
       const handleClickMainApp = () => {
         setMainAppSt(true);
         setAboutSt(false);
-        setServicesSt(false);
+        setSettingSt(false);
       }
       const handleClick = (event) => {
         // console.log(event.currentTarget);
@@ -69,16 +69,16 @@ function MainPage() {
               textDecoration: 'none',
               // cursor: 'pointer',
             }}
-            onClick={() => window.location.reload()}
+            
           >
-            <span style={{cursor: 'pointer'}}>FinTrack</span>
+            <span style={{cursor: 'pointer'}} onClick={() => window.location.reload()}>FinTrack</span>
           </Typography>
 
 
           <Box sx={{ display: {xs: 'none', sm: 'flex'} }}>
             <Button color="inherit" onClick={handleClickMainApp}>Home</Button>
             <Button color="inherit" onClick={handleClickAbout}>About</Button>
-            <Button color="inherit" onClick={handleClickServices}>Services</Button>
+            <Button color="inherit" onClick={handleClickServices}>Setting</Button>
             <Button color="inherit" onClick={handleLogout}>Logout</Button>
           </Box>
           <Button
@@ -101,10 +101,10 @@ function MainPage() {
             onClose={handleClose}
             sx={{display: {sm: 'none'}}}
           >
-            <MenuItem onClick={handleClickMainApp}>Home</MenuItem>
-            <MenuItem onClick={handleClickAbout}>About</MenuItem>
-            <MenuItem onClick={handleClickServices}>Services</MenuItem>
-            <MenuItem onClick={handleLogout}>Logout</MenuItem>
+            <MenuItem onClick={handleClickMainApp} className="blue2">Home</MenuItem>
+            <MenuItem onClick={handleClickAbout} className="blue2">About</MenuItem>
+            <MenuItem onClick={handleClickServices} className="blue2">Setting</MenuItem>
+            <MenuItem onClick={handleLogout} className="blue2">Logout</MenuItem>
           </Menu>
         </Toolbar>
       </AppBar>
@@ -112,7 +112,7 @@ function MainPage() {
       <div>
         {MainAppSt && <MainApp />}
         {AboutSt && <About />}
-        {ServicesSt && <Service />}
+        {SettingSt && <Setting />}
       </div>
       
     </div>

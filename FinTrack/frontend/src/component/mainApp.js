@@ -94,14 +94,15 @@ function MainApp() {
           height={200}
         />
   
-        <div style={{backgroundColor: "#90e0ef"}}>
+        <div style={{backgroundColor: "#90e0ef", zIndex:1000}}>
         <Box
           sx={{
             position: "fixed",
             bottom: 20,
             left: "50%",
             transform: "translateX(-50%)",
-            width: {xs: "85%", sm: "50%", md: "40%", }, 
+            width: {xs: "85%", sm: "50%", md: "40%" }, 
+            height: {xs: "auto", sm: "2em", md: "2em" },
             textAlign: "center",
             zIndex: 1000, 
             // bgcolor: "white",

@@ -1,0 +1,26 @@
+How to Use It:
+
+Set your Anthropic API key as an environment variable:
+export ANTHROPIC_API_KEY="your-api-key-here"
+
+Import and use the class in your code:
+pythonfrom financial_analytics import FinancialAnalyticsAPI, load_purchases_from_csv
+
+# Either load from CSV
+purchases = load_purchases_from_csv("my_transactions.csv")
+
+# Or create purchases directly
+purchases = [
+    {"date": "2025-04-01", "amount": 120.50, "category": "Groceries", "vendor": "Store A"},
+    # More purchases...
+]
+
+client = FinancialAnalyticsAPI()
+
+# Get analysis for different timeframes
+current_month = client.get_current_month_data(purchases)
+previous_month = client.get_previous_month_data(purchases)
+ytd = client.get_ytd_data(purchases)
+
+
+The API will return a structured analysis with category breakdowns, total spending, recommendations, and more. You can extend the code to add visualizations or integrate with other systems as needed.

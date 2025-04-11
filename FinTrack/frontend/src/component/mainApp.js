@@ -1,6 +1,6 @@
 import React from "react";
 import { Container, Typography, Avatar, LinearProgress, Box, TextField, Button, IconButton, Collapse, CircularProgress } from "@mui/material";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import axios from "axios"; 
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -24,6 +24,7 @@ function MainApp() {
     const [expanded, setExpanded] = useState(false);
     const [message, setMessage] = useState("");
     const [chat, setChat] = useState([]);
+    const bottomRef = useRef(null);
   
     const handleSendMessage = async () => {
       if (!message.trim()) return;
@@ -43,6 +44,10 @@ function MainApp() {
         console.error("Error communicating with AI:", error);
       }
     };  
+
+    useEffect(() => {
+      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, [chat]);
     
     useEffect(()=> {
       axios.get("http://127.0.0.1:8000/api/getMessages/")
@@ -151,7 +156,12 @@ function MainApp() {
                   <DeleteIcon sx={{color: "primary.main"}} />
                 </IconButton>
               </Box>
-              <Box sx={{ overflowY: "auto", p: 1, mb: 2, height: "15em", bgcolor: "#90e0ef", borderRadius: 2 }}>
+              <Box sx={{ overflowY: "auto",
+                p: 1,
+                mb: 2, 
+                height: {xs: "auto", sm: "13em", md: "13em" }, 
+                bgcolor: "#90e0ef", 
+                borderRadius: 2 }}>
                 {chat.map((msg, index) => (
                   <Typography
                     key={index}
@@ -167,6 +177,7 @@ function MainApp() {
                     {msg.content}
                   </Typography>
                 ))}
+                <div ref={bottomRef} /> {/* Scroll to the bottom of the chat */}
               </Box>
   
               {/* Input Field & Send Button */}

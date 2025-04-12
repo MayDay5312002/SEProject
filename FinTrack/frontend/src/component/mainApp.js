@@ -106,8 +106,8 @@ function MainApp() {
             bottom: 20,
             left: "50%",
             transform: "translateX(-50%)",
-            width: {xs: "85%", sm: "50%", md: "40%" }, 
-            height: {xs: "auto", sm: "2em", md: "2em" },
+            width: {xs: "85%", sm: "70%", md: "70%" }, 
+            // height: {xs: "auto", sm: "15em", md: "em" },
             textAlign: "center",
             zIndex: 1000, 
             // bgcolor: "white",
@@ -149,7 +149,7 @@ function MainApp() {
             >
               <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <Typography variant="h5" gutterBottom className="blue2" sx={{ fontWeight: "500" }}>
-                  FinTrack AI Assistant
+                  FinTracker AI Assistant
                 </Typography>
 
                 <IconButton onClick={resetThreadClick}>
@@ -159,11 +159,12 @@ function MainApp() {
               <Box sx={{ overflowY: "auto",
                 p: 1,
                 mb: 2, 
-                height: {xs: "auto", sm: "13em", md: "13em" }, 
+                height: {xs: "auto", sm: "20em", md: "20em" }, 
                 bgcolor: "#90e0ef", 
                 borderRadius: 2 }}>
                 {chat.map((msg, index) => (
                   <Typography
+                    variant="body1"
                     key={index}
                     sx={{
                       textAlign: msg.type === "user" ? "right" : "left",
@@ -171,7 +172,8 @@ function MainApp() {
                       p: 1,
                       borderRadius: 1,
                       mb: 1,
-                      color: "white"
+                      color: "white",
+                      whiteSpace: "pre-line", // Preserve line breaks
                     }}
                   >
                     {msg.content}

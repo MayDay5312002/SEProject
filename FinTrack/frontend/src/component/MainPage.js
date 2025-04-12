@@ -71,7 +71,7 @@ function MainPage() {
             }}
             
           >
-            <span style={{cursor: 'pointer'}} onClick={() => window.location.reload()}>FinTrack</span>
+            <span style={{cursor: 'pointer'}} onClick={() => window.location.reload()}>FinTracker</span>
           </Typography>
 
 

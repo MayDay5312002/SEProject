@@ -15,11 +15,11 @@ const About = () => {
     <Container maxWidth="md" sx={{ textAlign: "center", mt: 5}}>
       <Typography variant="h4" gutterBottom className="blue2" sx={{fontWeight: "600"}}>Service</Typography>
       <Typography variant="h6" sx={{my: 1, py: 2}} className="blue2">
-        FinTrack is a web application designed to simplify your financial management. 
+        FinTracker is a web application designed to simplify your financial management. 
         It enables you to effortlessly track your transactions, create and manage budgets, and gain real-time insights into your spending habits.
-        By turning your financial data into actionable information, FinTrack helps you identify trends, optimize your expenditures, and make informed decisions to secure your financial future. 
+        By turning your financial data into actionable information, FinTracker helps you identify trends, optimize your expenditures, and make informed decisions to secure your financial future. 
         Whether you’re an individual or a small business,
-        FinTrack offers a user-friendly interface and robust features that put you in complete control of your finances.
+        FinTracker offers a user-friendly interface and robust features that put you in complete control of your finances.
       </Typography>
       <Divider sx={{ mt: 5 }} />
       <Typography variant="h4" gutterBottom className="blue2" sx={{fontWeight: "600", mt: 5}}>About Us</Typography>

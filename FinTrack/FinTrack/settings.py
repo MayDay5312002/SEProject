@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 from pathlib import Path
 from dotenv import load_dotenv
 import os
+from datetime import timedelta
 
 
 load_dotenv()#loading the .env file
@@ -36,7 +37,10 @@ CSRF_TRUSTED_ORIGINS = ["http://127.0.0.1", "http://localhost"]
 #FOR NOW
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True  # Allow CSRF cookies over HTTP
+CRSF_COOKIE_SAMESITE = 'Lax'  # Allow CSRF cookies to be sent with cross-site requests
 CORS_ALLOW_ALL_ORIGINS = True ### FOR NOW
+
+# CSRF_COOKIE_HTTPONLY = False
 
 
 # Application definition
@@ -146,3 +150,13 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+    "SIGNING_KEY": "TDXVMWwH1sJHO_pcNLQU0oMmZ7oNvuSjk-wSk_ieLkimNXm9jSKQqRsLtmxsZOyFr_c6qrW-Ce5qJMd0dJQc-A",
+    # "TOKEN_OBTAIN_SERIALIZER": "linkedInProj.serializers.CustomTokenObtainPairSerializer",
+    "AUTH_COOKIE_SECURE": True,  
+    # "ROTATE_REFRESH_TOKENS": True,
+    
+}

@@ -3,11 +3,12 @@ import { TextField, InputLabel, Button, Typography, Card } from "@mui/material";
 import axios from "axios";
 import {useNavigate} from "react-router-dom";
 
-const Login = () => {
+const SignUp = () => {
   const [formData, setFormData] = useState({
     username: "",
     password: "",
   });
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
   const navigate = useNavigate();
 
@@ -20,19 +21,27 @@ const Login = () => {
     }));
   };
 
+    const handleConfirmPasswordChange = (e) => {
+    setConfirmPassword(e.target.value);
+  };
+
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault(); 
     try{
-      const response = await axios.post("http://127.0.0.1:8000/api/loginAccount/", formData);
+      if(formData.password !== confirmPassword){
+        setErrorMsg("Passwords do not match");
+        return;
+      }
+      const response = await axios.post("http://127.0.0.1:8000/api/registerAccount/", formData);
       console.log(response.data);
-      localStorage.setItem("isAuthenticated", "true");
-      navigate("/dashboard");
+      navigate("/");
     }
     catch(error){
-      setErrorMsg("Invalid Credentials");
-      localStorage.setItem("isAuthenticated", "false");
-      console.log(error);
+      
+      setErrorMsg(error.response.data["error"]);
+    //   console.log(error);
+    //   console.log(error.response.data["error"]);
     }
   };
 
@@ -57,17 +66,24 @@ const Login = () => {
           flexDirection: "column",
         }}
         onSubmit={handleSubmit}
+        method="post"
       >
+        
         {/* Centered Typography */}
         <Typography variant="h3" component="h3"sx={{ textAlign: "center", py: 1, fontWeight: 500 , mb: 3, color:"#0077b6"}}>
-          Login
+          Sign Up
         </Typography>
 
         <InputLabel htmlFor="username" sx={{color: "#0077b6"}}>Username</InputLabel>
-        <TextField helperText=" " id="username" name="username" color="#03045e" value={formData.username} onChange={handleChange} sx={{width: '12em'}}/>
+        <TextField helperText=" " id="username" name="username" color="#03045e" value={formData.username} onChange={handleChange} sx={{width: '12em'}} required/>
+
+        <InputLabel htmlFor="confirmPassword" sx={{color: "#0077b6"}}>Confirm Password</InputLabel>
+        <TextField helperText="" id="confirmPassword" name="confirmPassword" type="password" color="#03045e" onChange={handleConfirmPasswordChange} value={confirmPassword} sx={{width: '12em', mb: 2.2}} required/>
+        
+
 
         <InputLabel htmlFor="password" sx={{color: "#0077b6"}}>Password</InputLabel>
-        <TextField helperText="" id="password" name="password" type="password" color="#03045e" onChange={handleChange} value={formData.password} sx={{width: '12em'}}/>
+        <TextField helperText="" id="password" name="password" type="password" color="#03045e" onChange={handleChange} value={formData.password} sx={{width: '12em'}} required/>
         {/* <Typography variant="caption" component="caption">Wrong Credentials</Typography> */}
         <Typography variant="caption" gutterBottom sx={{textAlign: 'center', mt: 1, height: '0.6em', color: 'red'}}>
         {errorMsg}
@@ -88,7 +104,7 @@ const Login = () => {
           Login
         </Button>
         <Typography variant="caption" gutterBottom sx={{textAlign: 'center', mt: 2, height: '0.6em', color: '#0077b6'}}>
-            Need an account? <u style={{cursor: 'pointer'}} onClick={() => navigate("/signup")}>SIGN UP</u>
+            Already have an account? <u style={{cursor: 'pointer'}} onClick={()=>navigate("/")}>LOGIN</u>
         </Typography>
       </form>
       </Card>
@@ -96,5 +112,5 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default SignUp;
 

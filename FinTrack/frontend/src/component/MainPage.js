@@ -1,15 +1,18 @@
 import React from "react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { AppBar, Typography, Toolbar, Box, Button, Menu, MenuItem } from "@mui/material";
 import About from "./About";
 import Setting from "./Setting";
 import MainApp from "./mainApp";
+import axios from "axios";
 
 
 
 function MainPage() {
     const navigate = useNavigate();
+    
+    // const navigate = useNavigate();
     const [loading, setLoading] = useState(true);
 
     const [anchorEl, setAnchorEl] = useState(null);
@@ -45,12 +48,30 @@ function MainPage() {
         setAnchorEl(null);
       };
       const handleLogout = (event) => {
-        // axios.get("http://127.0.0.1:8000/api/logout").then(() => {
-        //   localStorage.setItem("isAuthenticated", "false");
-        //   navigate("/");  
-        // })
+        axios.post("http://127.0.0.1:8000/api/logoffAccount/").then(() => {
+          localStorage.setItem("isAuthenticated", "false");
+          navigate("/");  
+        })
         navigate("/");
       }
+
+      useEffect(()=> {
+        axios.get("http://127.0.0.1:8000/api/authenticate/")
+        .then((response) => {
+          if(!localStorage.getItem("isAuthenticated") === null){
+            // console.log("there is no authentication token in local storage");
+            navigate("/");
+          }
+          // console.log("Authenticated")
+          localStorage.setItem("isAuthenticated", "true");
+          
+        })
+        .catch((error) => {
+          // console.log("Error fetching dashboard:", error);
+          localStorage.setItem("isAuthenticated", "false");
+          navigate("/"); 
+        });
+      }, []);
 
     return (
         <div>

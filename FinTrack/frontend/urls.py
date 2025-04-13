@@ -8,6 +8,7 @@ import os
 urlpatterns = [
     path('', index),
     path("dashboard/", index),
+    path("signup/", index),
     path("images/", index)
 
 ]

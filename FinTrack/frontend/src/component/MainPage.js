@@ -52,7 +52,11 @@ function MainPage() {
           localStorage.setItem("isAuthenticated", "false");
           navigate("/");  
         })
-        navigate("/");
+        .catch((error) => {
+          // console.log("Error fetching dashboard:", error);
+          localStorage.setItem("isAuthenticated", "false");
+          navigate("/"); 
+        });
       }
 
       useEffect(()=> {

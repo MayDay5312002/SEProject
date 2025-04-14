@@ -1,10 +1,13 @@
 import React from "react";
-import { Container, Typography, Avatar, LinearProgress, Box, TextField, Button, IconButton, Collapse, CircularProgress } from "@mui/material";
+import { Container, Typography, Avatar, LinearProgress, Box, TextField, Button, IconButton, Collapse, CircularProgress,
+Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper
+} from "@mui/material";
 import { useState, useEffect, useRef } from "react";
 import axios from "axios"; 
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { PieChart } from "@mui/x-charts/PieChart";
+import BasicModal from "../other-components/BasicModal";
 const months = {
     0: "January",
     1: "February",
@@ -24,6 +27,9 @@ function MainApp() {
     const [expanded, setExpanded] = useState(false);
     const [message, setMessage] = useState("");
     const [chat, setChat] = useState([]);
+    const [transactions, setTransactions] = useState([]);
+    const [categories, setCategories] = useState([]);
+    const [searchTerm, setSearchTerm] = useState('');
     const bottomRef = useRef(null);
   
     const handleSendMessage = async () => {
@@ -63,7 +69,36 @@ function MainApp() {
       .catch((error) => {
         console.error("Error fetching messages:", error);
       });
+      axios.get("http://127.0.0.1:8000/api/getCategories/")
+      .then((response) => {
+        console.log(response.data["categories"]);
+        setCategories(response.data["categories"]);
+      })
+      .catch((error) => {
+        console.error("Error fetching categories:", error);
+      });
     }, []);
+
+    useEffect(() => {
+      axios.get("http://127.0.0.1:8000/api/getUserTransactions/")
+      .then((response) => {
+        console.log(response.data["transactions"]);
+        setTransactions(response.data["transactions"]);
+        // console.log(transactions);
+      })
+      .catch((error) => {
+        console.error("Error fetching transactions:", error);
+      });
+    }, []);
+
+    // useEffect(() => {
+    //   console.log('Transactions updated:', transactions);
+    // }, [transactions]);
+
+    // useEffect(() => {
+    //   console.log('Categories updated:', categories);
+    // }, [categories]);
+    
 
     const resetThreadClick = async () => {
       try {
@@ -75,6 +110,38 @@ function MainApp() {
       }
 
     }
+
+    const data = [
+      {
+        date: '2025-04-15',
+        vendorName: 'Amazon',
+        amount: 129.99,
+        category: 'Shopping',
+      },
+      {
+        date: '2025-04-13',
+        vendorName: 'Starbucks',
+        amount: 5.75,
+        category: 'Food & Drink',
+      },
+      {
+        date: '2025-04-10',
+        vendorName: 'Netflix',
+        amount: 15.99,
+        category: 'Entertainment',
+      },
+    ];
+
+    const getCategories = (category_id) => {return categories.find(category => category.id === category_id)?.category_name;} //returns a string of a category name
+    // this is for search
+    const filteredData = transactions.filter((row) =>
+      (row.transaction_name && row.transaction_name.toLowerCase().includes(searchTerm.toLowerCase())) || // Check for transaction_name
+      (getCategories(row.category_id) && getCategories(row.category_id).toLowerCase().includes(searchTerm.toLowerCase())) || // Check if category exists
+      (row.date && row.date.toString().includes(searchTerm)) // Ensure row.date is a string
+    );
+    
+
+ 
 
     
     return (        
@@ -98,7 +165,48 @@ function MainApp() {
           width={400}
           height={200}
         />
-  
+        <div style={{paddingBottom: "5em"}}>
+        <Paper sx={{ padding: 2, borderRadius: 3, }}>
+            <TextField
+              label="Search"
+              variant="outlined"
+              fullWidth
+              margin="normal"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            <BasicModal transactions={transactions} setTransactions={setTransactions}/>
+            <TableContainer>
+              <Table aria-label="expenses table">
+                <TableHead>
+                  <TableRow>
+                    <TableCell><strong>Date</strong></TableCell>
+                    <TableCell><strong>Vendor Name</strong></TableCell>
+                    <TableCell align="right"><strong>Amount ($)</strong></TableCell>
+                    <TableCell><strong>Category</strong></TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {filteredData.map((row, index) => (
+                    <TableRow key={index}>
+                      <TableCell>{row.transaction_date}</TableCell>
+                      <TableCell>{row.transaction_name}</TableCell>
+                      <TableCell align="right">{row.amount.toFixed(2)}</TableCell>
+                      <TableCell>{typeof row.category_id === "string" ? row.category_id : getCategories(row.category_id)}</TableCell>
+                    </TableRow>
+                  ))}
+                  {filteredData.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={4} align="center">
+                        No results found.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </Paper>
+          </div>
         <div style={{backgroundColor: "#90e0ef", zIndex:1000}}>
         <Box
           sx={{

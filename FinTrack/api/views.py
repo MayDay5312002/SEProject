@@ -18,7 +18,7 @@ from django.shortcuts import get_object_or_404 , redirect
 from datetime import timedelta
 from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
 from rest_framework.status import HTTP_201_CREATED, HTTP_400_BAD_REQUEST
-
+from django.db import connection
 # from pprint import pprint
 
 
@@ -32,6 +32,7 @@ assistant = os.getenv("AI_ASSISTANT_KEY")
 
 class chatAssistantView(APIView):
     def post(self, request):
+        authenticate_user(request)
         user_message = request.data.get("message", "")
         thread = request.COOKIES.get("thread_id", None)
         if thread is None:
@@ -160,6 +161,7 @@ class chatAssistantView(APIView):
         
 class getThreadMessageView(APIView):
     def get(self, request):
+        authenticate_user(request)
         print(os.getenv("buss_news_api"))
         thread_id = request.COOKIES.get("thread_id", None)
         if thread_id is None:
@@ -196,6 +198,7 @@ class getThreadMessageView(APIView):
 
 class deleteThreadView(APIView):
     def post(self, request):
+        authenticate_user(request)
         thread_id = request.COOKIES.get("thread_id", None)
         thread_id = client.beta.threads.create().id
         newResponse = Response({"response": "Thread deleted"}, status=200)
@@ -272,6 +275,14 @@ def loginAccount(request):
             response.set_cookie(
                 'access_token',
                 tokens.get('access'),
+                httponly=True,
+                secure=True,
+                max_age=timedelta(days=15),
+                samesite='Strict'
+            )
+            response.set_cookie(
+                'account_id',
+                serializer.data['id'],
                 httponly=True,
                 secure=True,
                 max_age=timedelta(days=15),
@@ -383,28 +394,24 @@ def authenticate_user(request):
 
 
 # "requires a bearer token that authetnicates this "
-# @api_view(['POST'])
-# @permission_classes([IsAuthenticated])
-# def addTransaction(request):
-#    # Get account ID from HTTP-only cookie
-#     accountID = request.COOKIES.get('account_id')
+@api_view(['POST'])
+def addTransaction(request):
+    authenticate_user(request)
+    accountID = request.COOKIES.get("account_id")
+    # Make a copy of request.data because it's immutable
+    category = request.data.get('category')
+    amount = float(request.data.get('amount'))
+    date = request.data.get('date')
+    vendor_name = request.data.get('name')
 
-#     if not accountID:
-#         return Response({'error': 'Account ID not found in cookies'}, status=400)
 
-#     # Make a copy of request.data because it's immutable
-#     dataCopy = request.data.copy()
+    print(category, amount, date, vendor_name, accountID)
 
-#     # Add the account ID to the data payload
-#     dataCopy['accountID'] = accountID  # <-- fixed typo here (was amountID)
+    with connection.cursor() as cursor:
+        cursor.callproc("createTransaction", [date, vendor_name, amount, category, accountID])
+        cursor.fetchall()
 
-#     # Serialize and save the data
-#     serializer = TransactionsSerializer(data=dataCopy)
-
-#     if serializer.is_valid():
-#         serializer.save()
-#         return Response(serializer.data, status=200)
-#     return Response(serializer.errors, status=400)
+    return Response({"message": "Transaction added successfully"}, status=200)
 
 
 
@@ -415,6 +422,7 @@ def authenticate_user(request):
 "purpose used to set the http cookie to put the transaciton and budge "
 @api_view(['POST'])
 def getAccountID(request):
+    authenticate_user(request)
     username = request.data.get('username')
     user = User.objects.filter(username=username).first()
 
@@ -438,7 +446,7 @@ def getAccountID(request):
 
 @api_view(['POST'])
 def verifyRefreshToken(request):
-
+    authenticate_user(request)
     refreshToken = request.COOKIES.get('refresh_token')
 
     if(not refreshToken):
@@ -453,7 +461,7 @@ def verifyRefreshToken(request):
 #This is for case where in memory access token is null or empty
 @api_view(['POST'])
 def resetAccessToken(request):
-
+    authenticate_user(request)
     #valid token as it pass the first case
     refreshToken = request.COOKIES.get('refresh_token')
 
@@ -481,3 +489,37 @@ def resetAccessToken(request):
     
     except requests.exceptions.RequestException as e:
         return Response({"error": f"Error connecting to external API: {str(e)}"}, status=500)
+    
+@api_view(['GET'])
+def getCategories(request):
+    authenticate_user(request)
+    with connection.cursor() as cursor:
+        cursor.callproc("getAllCategories", [])
+        headers = [col[0] for col in cursor.description]
+        results = cursor.fetchall()
+        results = [{headers[0]: row[0], headers[1]: row[1]} for row in results]
+        print("Results:", results)
+    return Response({"categories": results}, status=200)
+
+
+@api_view(['GET'])
+def getUserTransactions(request):
+    #going have to require a access token and bearer token
+
+    # below was just for testing by query paramter 
+    # accountID = request.GET.get("accountID")
+
+
+    # this would jsut be call with curernt account id in token
+    # account ID woould be in the http only cookie
+    authenticate_user(request)
+    accountID = request.COOKIES.get("account_id") #account id cookie
+
+    with connection.cursor() as cursor:
+        cursor.callproc("getAllTransaction", [accountID])
+        headers = [col[0] for col in cursor.description]
+        results = cursor.fetchall()
+        results = [{headers[0]: row[0], headers[1]: row[1], headers[2]: row[2], headers[3]: row[3], headers[4]: row[4], headers[5]: row[5]} for row in results]
+        print("Results:", results)
+    return Response({"transactions": results}, status=200)
+

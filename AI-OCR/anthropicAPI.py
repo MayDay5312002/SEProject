@@ -1,17 +1,16 @@
-# Testing API usage and capabilities
-# Input spending
-# Out financial analytics
-
 import os
 import json
-import requests
 from datetime import datetime, timedelta
 import pandas as pd
 from typing import Dict, List, Optional, Union
+from anthropic import Anthropic
+from dotenv import load_dotenv
+load_dotenv()
 
-class FinancialAnalyticsAPI:
+class FinancialAnalyticsClient:
     """
-    A class to interact with Anthropic's Claude API for financial analytics.
+    A class to interact with Anthropic's Claude API for financial analytics
+    using the official Anthropic Python SDK.
     """
     
     def __init__(self, api_key: str = None):
@@ -22,12 +21,9 @@ class FinancialAnalyticsAPI:
         if not self.api_key:
             raise ValueError("API key must be provided or set as ANTHROPIC_API_KEY environment variable")
         
-        self.api_url = "https://api.anthropic.com/v1/messages"
-        self.headers = {
-            "Content-Type": "application/json",
-            "x-api-key": self.api_key,
-            "anthropic-version": "2023-06-01"
-        }
+        # Initialize the Anthropic client
+        self.client = Anthropic(api_key=self.api_key)
+        self.model = "claude-3-7-sonnet-20250219"  # Latest Claude model as of April 2025
         
     def _format_financial_data(self, 
                               purchases: List[Dict], 
@@ -67,35 +63,38 @@ class FinancialAnalyticsAPI:
         """
         prompt = self._format_financial_data(purchases, timeframe)
         
-        payload = {
-            "model": "claude-3-7-sonnet-20250219",
-            "max_tokens": 4000,
-            "messages": [
+        # Create a message using the Anthropic SDK
+        response = self.client.messages.create(
+            model=self.model,
+            max_tokens=4000,
+            messages=[
                 {"role": "user", "content": prompt}
             ]
-        }
-        
-        response = requests.post(self.api_url, headers=self.headers, json=payload)
-        
-        if response.status_code != 200:
-            raise Exception(f"API request failed with status {response.status_code}: {response.text}")
-            
-        result = response.json()
+        )
         
         # Extract the assistant's message content
-        analysis_text = result["content"][0]["text"]
+        analysis_text = response.content[0].text
         
         # Try to parse JSON from the response
         try:
             # Find JSON in the response (might be wrapped in markdown code blocks)
-            json_start = analysis_text.find('{')
-            json_end = analysis_text.rfind('}') + 1
-            if json_start >= 0 and json_end > json_start:
-                json_str = analysis_text[json_start:json_end]
+            # Check for code blocks first
+            if "```json" in analysis_text:
+                # Extract content between ```json and ```
+                start_index = analysis_text.find("```json") + 7
+                end_index = analysis_text.find("```", start_index)
+                json_str = analysis_text[start_index:end_index].strip()
                 analysis = json.loads(json_str)
             else:
-                # If no JSON is found, return the raw text
-                analysis = {"raw_analysis": analysis_text}
+                # Look for JSON object directly
+                json_start = analysis_text.find('{')
+                json_end = analysis_text.rfind('}') + 1
+                if json_start >= 0 and json_end > json_start:
+                    json_str = analysis_text[json_start:json_end]
+                    analysis = json.loads(json_str)
+                else:
+                    # If no JSON is found, return the raw text
+                    analysis = {"raw_analysis": analysis_text}
         except json.JSONDecodeError:
             # If JSON parsing fails, return the raw text
             analysis = {"raw_analysis": analysis_text}
@@ -121,38 +120,41 @@ class FinancialAnalyticsAPI:
         now = datetime.now()
         year = now.year
         return self.analyze_finances(purchases, f"year-to-date ({year})")
-
-# Example usage
-if __name__ == "__main__":
-    # Sample purchase data
-    sample_purchases = [
-        {"date": "2025-04-01", "amount": 120.50, "category": "Groceries", "vendor": "Whole Foods"},
-        {"date": "2025-04-02", "amount": 45.00, "category": "Dining", "vendor": "Local Restaurant"},
-        {"date": "2025-04-03", "amount": 65.99, "category": "Entertainment", "vendor": "Movie Theater"},
-        {"date": "2025-04-05", "amount": 200.00, "category": "Utilities", "vendor": "Electric Company"},
-        {"date": "2025-04-07", "amount": 35.45, "category": "Groceries", "vendor": "Trader Joe's"},
-        {"date": "2025-04-10", "amount": 89.99, "category": "Shopping", "vendor": "Target"},
-        {"date": "2025-04-12", "amount": 55.00, "category": "Transportation", "vendor": "Gas Station"},
-        {"date": "2025-04-15", "amount": 12.99, "category": "Subscriptions", "vendor": "Streaming Service"},
-        {"date": "2025-04-18", "amount": 78.50, "category": "Dining", "vendor": "Fancy Restaurant"},
-        {"date": "2025-04-20", "amount": 120.00, "category": "Shopping", "vendor": "Department Store"},
-    ]
     
-    # Get the API key from environment variable or pass it directly
-    # Example: export ANTHROPIC_API_KEY="your-api-key-here"
-    
-    # Initialize the API client
-    client = FinancialAnalyticsAPI()
-    
-    # Get current month analysis
-    current_month_analysis = client.get_current_month_data(sample_purchases)
-    print("Current Month Analysis:")
-    print(json.dumps(current_month_analysis, indent=2))
-    
-    # Get YTD analysis
-    ytd_analysis = client.get_ytd_data(sample_purchases)
-    print("\nYear-to-Date Analysis:")
-    print(json.dumps(ytd_analysis, indent=2))
+    def filter_purchases_by_date(self, 
+                               purchases: List[Dict], 
+                               start_date: str = None, 
+                               end_date: str = None) -> List[Dict]:
+        """
+        Filter purchases by date range.
+        
+        Args:
+            purchases: List of purchase dictionaries
+            start_date: Start date string in 'YYYY-MM-DD' format
+            end_date: End date string in 'YYYY-MM-DD' format
+            
+        Returns:
+            Filtered list of purchases
+        """
+        if not start_date and not end_date:
+            return purchases
+            
+        filtered = []
+        
+        for purchase in purchases:
+            purchase_date = purchase.get('date')
+            if not purchase_date:
+                continue
+                
+            if start_date and purchase_date < start_date:
+                continue
+                
+            if end_date and purchase_date > end_date:
+                continue
+                
+            filtered.append(purchase)
+            
+        return filtered
 
 # Function to read purchases from a CSV file
 def load_purchases_from_csv(filepath: str) -> List[Dict]:
@@ -176,7 +178,38 @@ def load_purchases_from_csv(filepath: str) -> List[Dict]:
         print(f"Error loading CSV file: {e}")
         return []
 
-# Example of using the CSV loader
-# purchases = load_purchases_from_csv("financial_data.csv")
-# client = FinancialAnalyticsAPI()
-# analysis = client.get_current_month_data(purchases)
+# Example usage
+if __name__ == "__main__":
+    # Sample purchase data
+    sample_purchases = [
+        {"date": "2025-04-01", "amount": 120.50, "category": "Groceries", "vendor": "Whole Foods"},
+        {"date": "2025-04-02", "amount": 45.00, "category": "Dining", "vendor": "Local Restaurant"},
+        {"date": "2025-04-03", "amount": 65.99, "category": "Entertainment", "vendor": "Movie Theater"},
+        {"date": "2025-04-05", "amount": 200.00, "category": "Utilities", "vendor": "Electric Company"},
+        {"date": "2025-04-07", "amount": 35.45, "category": "Groceries", "vendor": "Trader Joe's"},
+        {"date": "2025-04-10", "amount": 89.99, "category": "Shopping", "vendor": "Target"},
+        {"date": "2025-04-12", "amount": 55.00, "category": "Transportation", "vendor": "Gas Station"},
+        {"date": "2025-04-15", "amount": 12.99, "category": "Subscriptions", "vendor": "Streaming Service"},
+        {"date": "2025-04-18", "amount": 78.50, "category": "Dining", "vendor": "Fancy Restaurant"},
+        {"date": "2025-04-20", "amount": 120.00, "category": "Shopping", "vendor": "Department Store"},
+    ]
+    
+    try:
+        # Initialize the API client
+        client = FinancialAnalyticsClient()
+        
+        # Get current month analysis
+        print("Analyzing current month spending...")
+        current_month_analysis = client.get_current_month_data(sample_purchases)
+        print("Current Month Analysis:")
+        print(json.dumps(current_month_analysis, indent=2))
+        
+        # Get YTD analysis
+        print("\nAnalyzing year-to-date spending...")
+        ytd_analysis = client.get_ytd_data(sample_purchases)
+        print("\nYear-to-Date Analysis:")
+        print(json.dumps(ytd_analysis, indent=2))
+        
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        print("Make sure your ANTHROPIC_API_KEY is set correctly.")

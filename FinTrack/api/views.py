@@ -34,6 +34,7 @@ class chatAssistantView(APIView):
     def post(self, request):
         authenticate_user(request)
         user_message = request.data.get("message", "")
+        accountID = request.COOKIES.get("account_id")
         thread = request.COOKIES.get("thread_id", None)
         if thread is None:
             thread = client.beta.threads.create().id
@@ -104,20 +105,34 @@ class chatAssistantView(APIView):
                         return Response({"error": "Error"}, status=500)
                 if tool.function.name == "get_userData_analysis":
                     print("get_userData_analysis")
-                    sample_purchases = [
-                        {"date": "2025-04-01", "amount": 120.50, "category": "Groceries", "vendor": "Whole Foods"},
-                        {"date": "2025-04-02", "amount": 45.00, "category": "Dining", "vendor": "Local Restaurant"},
-                        {"date": "2025-04-03", "amount": 65.99, "category": "Entertainment", "vendor": "Movie Theater"},
-                        {"date": "2025-04-05", "amount": 200.00, "category": "Utilities", "vendor": "Electric Company"},
-                        {"date": "2025-04-07", "amount": 35.45, "category": "Groceries", "vendor": "Trader Joe's"},
-                        {"date": "2025-04-10", "amount": 89.99, "category": "Shopping", "vendor": "Target"},
-                        {"date": "2025-04-12", "amount": 55.00, "category": "Transportation", "vendor": "Gas Station"},
-                        {"date": "2025-04-15", "amount": 12.99, "category": "Subscriptions", "vendor": "Streaming Service"},
-                        {"date": "2025-04-18", "amount": 78.50, "category": "Dining", "vendor": "Fancy Restaurant"},
-                        {"date": "2025-04-20", "amount": 120.00, "category": "Shopping", "vendor": "Department Store"},
-                    ]
-    
-                    tool_response = get_userData_analysis(sample_purchases=sample_purchases)
+                    # sample_purchases = [
+                    #     {"date": "2025-04-01", "amount": 120.50, "category": "Groceries", "vendor": "Whole Foods"},
+                    #     {"date": "2025-04-02", "amount": 45.00, "category": "Dining", "vendor": "Local Restaurant"},
+                    #     {"date": "2025-04-03", "amount": 65.99, "category": "Entertainment", "vendor": "Movie Theater"},
+                    #     {"date": "2025-04-05", "amount": 200.00, "category": "Utilities", "vendor": "Electric Company"},
+                    #     {"date": "2025-04-07", "amount": 35.45, "category": "Groceries", "vendor": "Trader Joe's"},
+                    #     {"date": "2025-04-10", "amount": 89.99, "category": "Shopping", "vendor": "Target"},
+                    #     {"date": "2025-04-12", "amount": 55.00, "category": "Transportation", "vendor": "Gas Station"},
+                    #     {"date": "2025-04-15", "amount": 12.99, "category": "Subscriptions", "vendor": "Streaming Service"},
+                    #     {"date": "2025-04-18", "amount": 78.50, "category": "Dining", "vendor": "Fancy Restaurant"},
+                    #     {"date": "2025-04-20", "amount": 120.00, "category": "Shopping", "vendor": "Department Store"},
+                    # ]
+                    with connection.cursor() as cursor:
+                        cursor.callproc("getAllCategories", [])
+                        # headers = [col[0] for col in cursor.description]
+                        results = cursor.fetchall()
+                        categories = {row[0]: row[1] for row in results}
+                        print(categories)
+                        while cursor.nextset():
+                            pass
+                        cursor.callproc("getAllTransaction", [accountID])
+                        headers = [col[0] for col in cursor.description]
+                        results = cursor.fetchall()
+                        results = [{headers[0]: row[0], headers[1]: row[1].strftime("%Y-%m-%d"), headers[2]: row[2], headers[3]: str(row[3]), headers[4]: categories[row[4]]} for row in results]
+                        while cursor.nextset():
+                            pass
+                        print(results)
+                    tool_response = get_userData_analysis(sample_purchases=results)
                     tool_outputs.append(
                         {
                         "tool_call_id": tool.id,

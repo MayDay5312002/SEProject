@@ -143,7 +143,7 @@ function MainPage() {
             onClose={handleClose}
             sx={{display: {sm: 'none'}}}
           >
-            <MenuItem onClick={handleClickMainApp} className="blue2">Home</MenuItem>
+            <MenuItem onClick={handleClickMainApp} className="blue2" sx={{fontSize: '10e'}}>Home</MenuItem>
             <MenuItem onClick={handleClickAbout} className="blue2">About</MenuItem>
             <MenuItem onClick={handleClickServices} className="blue2">Setting</MenuItem>
             <MenuItem onClick={handleLogout} className="blue2">Logout</MenuItem>

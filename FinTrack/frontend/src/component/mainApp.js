@@ -2,6 +2,8 @@ import React from "react";
 import { Container, Typography, Avatar, LinearProgress, Box, TextField, Button, IconButton, Collapse, CircularProgress,
 Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper
 } from "@mui/material";
+
+import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { useState, useEffect, useRef } from "react";
 import axios from "axios"; 
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
@@ -22,6 +24,20 @@ const months = {
     10: "November",
     11: "December",
 };
+
+const theme = createTheme({
+  components: {
+    MuiMenuItem: {
+      styleOverrides: {
+        root: {
+          fontSize: '2vh',
+          // paddingTop: '10px',
+          // paddingBottom: '10px',
+        },
+      },
+    },
+  },
+});
 function MainApp() {
     const currentMonth = new Date().getMonth(); 
     const [expanded, setExpanded] = useState(false);
@@ -385,7 +401,7 @@ function MainApp() {
                     handleSendMessage();
                   }
                 }}
-                sx={{ mb: 2 }}
+                sx={{ mb: 2}}
               />
               <Button variant="contained" fullWidth onClick={handleSendMessage}>
                 Send

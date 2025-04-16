@@ -118,10 +118,10 @@ function MainPage() {
 
 
           <Box sx={{ display: {xs: 'none', sm: 'flex'} }}>
-            <Button color="inherit" onClick={handleClickMainApp}>Home</Button>
-            <Button color="inherit" onClick={handleClickAbout}>About</Button>
-            <Button color="inherit" onClick={handleClickServices}>Setting</Button>
-            <Button color="inherit" onClick={handleLogout}>Logout</Button>
+            <Button color="inherit" onClick={handleClickMainApp} sx={{fontSize: "1.5vh"}}>Home</Button>
+            <Button color="inherit" onClick={handleClickAbout} sx={{fontSize: "1.5vh"}}>About</Button>
+            <Button color="inherit" onClick={handleClickServices} sx={{fontSize: "1.5vh"}}>Setting</Button>
+            <Button color="inherit" onClick={handleLogout} sx={{fontSize: "1.5vh"}}>Logout</Button>
           </Box>
           <Button
             id="basic-button"
@@ -143,7 +143,7 @@ function MainPage() {
             onClose={handleClose}
             sx={{display: {sm: 'none'}}}
           >
-            <MenuItem onClick={handleClickMainApp} className="blue2" sx={{fontSize: '10e'}}>Home</MenuItem>
+            <MenuItem onClick={handleClickMainApp} className="blue2">Home</MenuItem>
             <MenuItem onClick={handleClickAbout} className="blue2">About</MenuItem>
             <MenuItem onClick={handleClickServices} className="blue2">Setting</MenuItem>
             <MenuItem onClick={handleLogout} className="blue2">Logout</MenuItem>

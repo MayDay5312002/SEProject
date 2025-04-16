@@ -362,7 +362,7 @@ function MainApp() {
               sx={{ overflowY: "auto",
               p: 1,
               mb: 2, 
-              height: "40vh", 
+              height: "37vh", 
               
               bgcolor: "#90e0ef", 
               borderRadius: 2 }}

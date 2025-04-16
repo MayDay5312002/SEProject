@@ -19,6 +19,7 @@ from datetime import timedelta
 from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
 from rest_framework.status import HTTP_201_CREATED, HTTP_400_BAD_REQUEST
 from django.db import connection
+import re
 # from pprint import pprint
 
 
@@ -30,6 +31,16 @@ client = openai.OpenAI()
 
 assistant = os.getenv("AI_ASSISTANT_KEY")
 
+
+
+def markdown_to_text(md):
+    # Remove headings
+    md = re.sub(r'^#{1,6}\s*', '', md, flags=re.MULTILINE)
+    # Remove bold/italic
+    md = re.sub(r'\*\*|\*|__|_', '', md)
+    # Remove lists
+    md = re.sub(r'^\s*[-+*]\s+', '', md, flags=re.MULTILINE)
+    return md.strip()
 class chatAssistantView(APIView):
     def post(self, request):
         authenticate_user(request)
@@ -68,7 +79,7 @@ class chatAssistantView(APIView):
         # print(response3.content)
         print(messages.data[0].content[0].text.value)
         if run.status == "completed":
-            response = Response({"response": unidecode(messages.data[0].content[0].text.value)}, status=200)
+            response = Response({"response": markdown_to_text(unidecode(messages.data[0].content[0].text.value))}, status=200)
             response.set_cookie(
                 key="thread_id",
                 value=thread.id,
@@ -154,7 +165,7 @@ class chatAssistantView(APIView):
             if run.status == "completed":
                 messages = client.beta.threads.messages.list(thread_id = thread.id)
                 print(messages.data[0].content[0].text.value)
-                response = Response({"response": unidecode(messages.data[0].content[0].text.value)}, status=200)
+                response = Response({"response": markdown_to_text(unidecode(messages.data[0].content[0].text.value))}, status=200)
                 response.set_cookie(
                     key="thread_id",
                     value=thread.id,
@@ -174,7 +185,11 @@ class chatAssistantView(APIView):
             print(run.status)
             return Response({"error": "Error"}, status=500)
         
+
 class getThreadMessageView(APIView):
+    '''
+    This gets the messages of a view
+    '''
     def get(self, request):
         authenticate_user(request)
         print(os.getenv("buss_news_api"))
@@ -201,7 +216,7 @@ class getThreadMessageView(APIView):
         response1 = requests.get(url1, headers=headersNew)
         if response1.status_code == 200:
             dictionary = [ele["content"][0]["text"]["value"] for ele in response1.json()["data"]]
-            dictionary = [unidecode(ele) for ele in dictionary[-1::-1]]
+            dictionary = [markdown_to_text(unidecode(ele)) for ele in dictionary[-1::-1]]
             # for ele in dictionary:
             #     print(ele)
             #     print()

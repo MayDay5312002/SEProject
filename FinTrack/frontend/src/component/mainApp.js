@@ -267,7 +267,7 @@ function MainApp() {
               <Box sx={{ overflowY: "auto",
                 p: 1,
                 mb: 2, 
-                height: {xs: "auto", sm: "20em", md: "20em" }, 
+                height: {xs: "auto", sm: "10em", md: "10em" }, 
                 bgcolor: "#90e0ef", 
                 borderRadius: 2 }}>
                 {chat.map((msg, index) => (

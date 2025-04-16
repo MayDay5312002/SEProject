@@ -94,7 +94,7 @@ function MainPage() {
         position="sticky" 
         sx={{
            bgcolor: "0077b6", 
-           py: {xs: "0.15em", sm: "0.15em", md: "0.5em"},
+           py: "1vh",
         }}
         >
         <Toolbar>
@@ -118,10 +118,10 @@ function MainPage() {
 
 
           <Box sx={{ display: {xs: 'none', sm: 'flex'} }}>
-            <Button color="inherit" onClick={handleClickMainApp} sx={{fontSize: "1.5vh"}}>Home</Button>
-            <Button color="inherit" onClick={handleClickAbout} sx={{fontSize: "1.5vh"}}>About</Button>
-            <Button color="inherit" onClick={handleClickServices} sx={{fontSize: "1.5vh"}}>Setting</Button>
-            <Button color="inherit" onClick={handleLogout} sx={{fontSize: "1.5vh"}}>Logout</Button>
+            <Button color="inherit" onClick={handleClickMainApp}>Home</Button>
+            <Button color="inherit" onClick={handleClickAbout}>About</Button>
+            <Button color="inherit" onClick={handleClickServices}>Setting</Button>
+            <Button color="inherit" onClick={handleLogout}>Logout</Button>
           </Box>
           <Button
             id="basic-button"

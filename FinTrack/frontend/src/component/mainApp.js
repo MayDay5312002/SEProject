@@ -3,7 +3,7 @@ import { Container, Typography, Avatar, LinearProgress, Box, TextField, Button, 
 Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper
 } from "@mui/material";
 
-import { createTheme, ThemeProvider } from '@mui/material/styles';
+// import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { useState, useEffect, useRef } from "react";
 import axios from "axios"; 
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
@@ -25,19 +25,19 @@ const months = {
     11: "December",
 };
 
-const theme = createTheme({
-  components: {
-    MuiMenuItem: {
-      styleOverrides: {
-        root: {
-          fontSize: '2vh',
-          // paddingTop: '10px',
-          // paddingBottom: '10px',
-        },
-      },
-    },
-  },
-});
+// const theme = createTheme({
+//   components: {
+//     MuiMenuItem: {
+//       styleOverrides: {
+//         root: {
+//           fontSize: '2vh',
+//           // paddingTop: '10px',
+//           // paddingBottom: '10px',
+//         },
+//       },
+//     },
+//   },
+// });
 function MainApp() {
     const currentMonth = new Date().getMonth(); 
     const [expanded, setExpanded] = useState(false);

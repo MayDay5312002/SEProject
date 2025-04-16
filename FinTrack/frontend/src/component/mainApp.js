@@ -175,7 +175,7 @@ function MainApp() {
               ],
             },
           ]}
-          width={400}
+          width={350}
           height={200}
         />
         <div style={{paddingBottom: "5em"}}>
@@ -346,7 +346,8 @@ function MainApp() {
               sx={{ overflowY: "auto",
               p: 1,
               mb: 2, 
-              height: {xs: "12em", sm: "12em", md: "15em" }, 
+              height: "40vh", 
+              
               bgcolor: "#90e0ef", 
               borderRadius: 2 }}
               // gap="2em"

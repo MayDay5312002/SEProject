@@ -94,7 +94,8 @@ function MainPage() {
         position="sticky" 
         sx={{
            bgcolor: "0077b6", 
-           py: "1vh",
+          //  py: "1vh",
+           height: {xs: "auto", sm: "auto", md: "auto"},
         }}
         >
         <Toolbar>

@@ -30,6 +30,7 @@ function MainApp() {
     const [transactions, setTransactions] = useState([]);
     const [categories, setCategories] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
+    const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
     const bottomRef = useRef(null);
   
     const handleSendMessage = async () => {
@@ -71,7 +72,7 @@ function MainApp() {
       });
       axios.get("http://127.0.0.1:8000/api/getCategories/")
       .then((response) => {
-        console.log(response.data["categories"]);
+        // console.log(response.data["categories"]);
         setCategories(response.data["categories"]);
       })
       .catch((error) => {
@@ -82,7 +83,7 @@ function MainApp() {
     useEffect(() => {
       axios.get("http://127.0.0.1:8000/api/getUserTransactions/")
       .then((response) => {
-        console.log(response.data["transactions"]);
+        // console.log(response.data["transactions"]);
         setTransactions(response.data["transactions"]);
         // console.log(transactions);
       })
@@ -91,6 +92,8 @@ function MainApp() {
       });
     }, []);
 
+
+
     // useEffect(() => {
     //   console.log('Transactions updated:', transactions);
     // }, [transactions]);
@@ -98,6 +101,7 @@ function MainApp() {
     // useEffect(() => {
     //   console.log('Categories updated:', categories);
     // }, [categories]);
+  
     
 
     const resetThreadClick = async () => {
@@ -111,34 +115,43 @@ function MainApp() {
 
     }
 
-    const data = [
-      {
-        date: '2025-04-15',
-        vendorName: 'Amazon',
-        amount: 129.99,
-        category: 'Shopping',
-      },
-      {
-        date: '2025-04-13',
-        vendorName: 'Starbucks',
-        amount: 5.75,
-        category: 'Food & Drink',
-      },
-      {
-        date: '2025-04-10',
-        vendorName: 'Netflix',
-        amount: 15.99,
-        category: 'Entertainment',
-      },
-    ];
 
     const getCategories = (category_id) => {return categories.find(category => category.id === category_id)?.category_name;} //returns a string of a category name
     // this is for search
     const filteredData = transactions.filter((row) =>
       (row.transaction_name && row.transaction_name.toLowerCase().includes(searchTerm.toLowerCase())) || // Check for transaction_name
       (getCategories(row.category_id) && getCategories(row.category_id).toLowerCase().includes(searchTerm.toLowerCase())) || // Check if category exists
-      (row.date && row.date.toString().includes(searchTerm)) // Ensure row.date is a string
+      (row.transaction_date && row.transaction_date.includes(searchTerm)) || // Ensure row.date is a string
+      (row.amount && row.amount.toString().includes(searchTerm)) // Ensure row.amount is a number 
     );
+    
+
+    const sortedData = [...filteredData].sort((a, b) => {
+      if (!sortConfig.key) return 0;
+    
+      let aValue = a[sortConfig.key];
+      let bValue = b[sortConfig.key];
+    
+      // Handle numeric sort
+      if (typeof aValue === "number" && typeof bValue === "number") {
+        return sortConfig.direction === "asc" ? aValue - bValue : bValue - aValue;
+      }
+    
+      // Handle string sort
+      aValue = String(aValue).toLowerCase();
+      bValue = String(bValue).toLowerCase();
+    
+      if (aValue < bValue) return sortConfig.direction === "asc" ? -1 : 1;
+      if (aValue > bValue) return sortConfig.direction === "asc" ? 1 : -1;
+      return 0;
+    });
+
+    const handleSort = (key) => {
+      setSortConfig((prev) => ({
+        key,
+        direction: prev.key === key && prev.direction === "asc" ? "desc" : "asc",
+      }));
+    };
     
 
  
@@ -166,47 +179,112 @@ function MainApp() {
           height={200}
         />
         <div style={{paddingBottom: "5em"}}>
-        <Paper sx={{ padding: 2, borderRadius: 3, }}>
-            <TextField
-              label="Search"
-              variant="outlined"
-              fullWidth
-              margin="normal"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-            <BasicModal transactions={transactions} setTransactions={setTransactions}/>
-            <TableContainer>
-              <Table aria-label="expenses table">
-                <TableHead>
-                  <TableRow>
-                    <TableCell><strong>Date</strong></TableCell>
-                    <TableCell><strong>Vendor Name</strong></TableCell>
-                    <TableCell align="right"><strong>Amount ($)</strong></TableCell>
-                    <TableCell><strong>Category</strong></TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {filteredData.map((row, index) => (
-                    <TableRow key={index}>
-                      <TableCell>{row.transaction_date}</TableCell>
-                      <TableCell>{row.transaction_name}</TableCell>
-                      <TableCell align="right">{row.amount.toFixed(2)}</TableCell>
-                      <TableCell>{typeof row.category_id === "string" ? row.category_id : getCategories(row.category_id)}</TableCell>
-                    </TableRow>
-                  ))}
-                  {filteredData.length === 0 && (
-                    <TableRow>
-                      <TableCell colSpan={4} align="center">
-                        No results found.
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          </Paper>
-          </div>
+            <Box
+              display="flex"
+              flexDirection={{ xs: "column", sm: "column", md: "row" }} // xs & sm = column, md+ = row
+              gap={"2em"} // adds spacing between items
+              // sx={{pd: "20em"}}
+            >
+            <Paper sx={{ padding: "2em", borderRadius: "3em"}}>
+                <Typography variant="h5" gutterBottom className="blue2" sx={{fontWeight: "500"}}>Transactions</Typography>
+                <TextField
+                  label="Search"
+                  variant="outlined"
+                  fullWidth
+                  margin="normal"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+                <BasicModal transactions={transactions} setTransactions={setTransactions}/>
+                <TableContainer>
+                  <Table aria-label="expenses table">
+                    <TableHead>
+                      <TableRow>
+                        <TableCell onClick={() => handleSort("transaction_date")} style={{ cursor: "pointer" }}>
+                          <strong>Date {sortConfig.key === "transaction_date" ? (sortConfig.direction === "asc" ? "⬆️" : "⬇️") : ""}</strong>
+                        </TableCell>
+                        <TableCell onClick={() => handleSort("transaction_name")} style={{ cursor: "pointer" }}>
+                          <strong>Vendor Name {sortConfig.key === "transaction_name" ? (sortConfig.direction === "asc" ? "⬆️" : "⬇️") : ""}</strong>
+                        </TableCell>
+                        <TableCell onClick={() => handleSort("amount")} style={{ cursor: "pointer" }} align="right">
+                          <strong>Amount ($) {sortConfig.key === "amount" ? (sortConfig.direction === "asc" ? "⬆️" : "⬇️") : ""}</strong>
+                        </TableCell>
+                        <TableCell onClick={() => handleSort("category_id")} style={{ cursor: "pointer" }}>
+                          <strong>Category {sortConfig.key === "category_id" ? (sortConfig.direction === "asc" ? "⬆️" : "⬇️") : ""}</strong>
+                        </TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {sortedData.map((row, index) => (
+                        <TableRow key={index}>
+                          <TableCell>{row.transaction_date}</TableCell>
+                          <TableCell>{row.transaction_name}</TableCell>
+                          <TableCell align="right">{row.amount.toFixed(2)}</TableCell>
+                          <TableCell>{typeof row.category_id === "string" ? row.category_id : getCategories(row.category_id)}</TableCell>
+                        </TableRow>
+                      ))}
+                      {filteredData.length === 0 && (
+                        <TableRow>
+                          <TableCell colSpan={4} align="center">
+                            No results found.
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              </Paper>
+              <Paper sx={{ padding: "2em", borderRadius: "3em"}}>
+                <Typography variant="h5" gutterBottom className="blue2" sx={{fontWeight: "500"}}>Budgets</Typography>
+                <TextField
+                  label="Search"
+                  variant="outlined"
+                  fullWidth
+                  margin="normal"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+                <BasicModal transactions={transactions} setTransactions={setTransactions}/>
+                <TableContainer>
+                  <Table aria-label="expenses table">
+                    <TableHead>
+                      <TableRow>
+                        <TableCell onClick={() => handleSort("transaction_date")} style={{ cursor: "pointer" }}>
+                          <strong>Date {sortConfig.key === "transaction_date" ? (sortConfig.direction === "asc" ? "⬆️" : "⬇️") : ""}</strong>
+                        </TableCell>
+                        <TableCell onClick={() => handleSort("transaction_name")} style={{ cursor: "pointer" }}>
+                          <strong>Vendor Name {sortConfig.key === "transaction_name" ? (sortConfig.direction === "asc" ? "⬆️" : "⬇️") : ""}</strong>
+                        </TableCell>
+                        <TableCell onClick={() => handleSort("amount")} style={{ cursor: "pointer" }} align="right">
+                          <strong>Amount ($) {sortConfig.key === "amount" ? (sortConfig.direction === "asc" ? "⬆️" : "⬇️") : ""}</strong>
+                        </TableCell>
+                        <TableCell onClick={() => handleSort("category_id")} style={{ cursor: "pointer" }}>
+                          <strong>Category {sortConfig.key === "category_id" ? (sortConfig.direction === "asc" ? "⬆️" : "⬇️") : ""}</strong>
+                        </TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {sortedData.map((row, index) => (
+                        <TableRow key={index}>
+                          <TableCell>{row.transaction_date}</TableCell>
+                          <TableCell>{row.transaction_name}</TableCell>
+                          <TableCell align="right">{row.amount.toFixed(2)}</TableCell>
+                          <TableCell>{typeof row.category_id === "string" ? row.category_id : getCategories(row.category_id)}</TableCell>
+                        </TableRow>
+                      ))}
+                      {filteredData.length === 0 && (
+                        <TableRow>
+                          <TableCell colSpan={4} align="center">
+                            No results found.
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              </Paper>
+            </Box>
+        </div>
         <div style={{backgroundColor: "#90e0ef", zIndex:1000}}>
         <Box
           sx={{
@@ -214,7 +292,7 @@ function MainApp() {
             bottom: 20,
             left: "50%",
             transform: "translateX(-50%)",
-            width: {xs: "85%", sm: "70%", md: "70%" }, 
+            width: {xs: "85%", sm: "85%", md: "70%" }, 
             // height: {xs: "auto", sm: "15em", md: "em" },
             textAlign: "center",
             zIndex: 1000, 
@@ -264,12 +342,15 @@ function MainApp() {
                   <DeleteIcon sx={{color: "primary.main"}} />
                 </IconButton>
               </Box>
-              <Box sx={{ overflowY: "auto",
-                p: 1,
-                mb: 2, 
-                height: {xs: "auto", sm: "10em", md: "10em" }, 
-                bgcolor: "#90e0ef", 
-                borderRadius: 2 }}>
+              <Box 
+              sx={{ overflowY: "auto",
+              p: 1,
+              mb: 2, 
+              height: {xs: "12em", sm: "12em", md: "15em" }, 
+              bgcolor: "#90e0ef", 
+              borderRadius: 2 }}
+              // gap="2em"
+              >
                 {chat.map((msg, index) => (
                   <Typography
                     variant="body1"

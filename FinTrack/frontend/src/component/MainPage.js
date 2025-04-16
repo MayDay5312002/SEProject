@@ -1,7 +1,7 @@
 import React from "react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { AppBar, Typography, Toolbar, Box, Button, Menu, MenuItem } from "@mui/material";
+import { AppBar, Typography, Toolbar, Box, Button, Menu, MenuItem, CircularProgress } from "@mui/material";
 import About from "./About";
 import Setting from "./Setting";
 import MainApp from "./mainApp";
@@ -60,30 +60,47 @@ function MainPage() {
       }
 
       useEffect(()=> {
-        axios.get("http://127.0.0.1:8000/api/authenticate/")
-        .then((response) => {
-          if(!localStorage.getItem("isAuthenticated") === null){
-            // console.log("there is no authentication token in local storage");
-            navigate("/");
+        const fetchDashboard = async () => {
+          try {
+            const response = await axios.get("http://127.0.0.1:8000/api/authenticate");
+            console.log(response.data);
+            localStorage.setItem("isAuthenticated", "true");
+            setLoading(false);
+          } catch (error) {
+            if (error.response && error.response.status === 401) {
+              localStorage.setItem("isAuthenticated", "false");
+              navigate("/"); 
+            } else {
+              localStorage.setItem("isAuthenticated", "false");
+              navigate("/");
+            }
           }
-          // console.log("Authenticated")
-          localStorage.setItem("isAuthenticated", "true");
-          
-        })
-        .catch((error) => {
-          // console.log("Error fetching dashboard:", error);
-          localStorage.setItem("isAuthenticated", "false");
-          navigate("/"); 
-        });
+        };
+        fetchDashboard();
+
       }, []);
+
+      if (loading) {
+        return (
+          <div className="center">
+            <CircularProgress color="secondary" />
+          </div>
+        );
+      }
 
     return (
         <div>
-        <AppBar position="sticky" sx={{ bgcolor: "0077b6", py: 2 }}>
+        <AppBar 
+        position="sticky" 
+        sx={{
+           bgcolor: "0077b6", 
+           py: {xs: "0.15em", sm: "0.15em", md: "0.5em"},
+        }}
+        >
         <Toolbar>
           {/* Logo or app name */}
           <Typography
-            variant="h3"
+            // variant={{xs: "h3", sm: "h3", md: "h3"}}
             sx={{
               flexGrow: 1,
               mr: 2,
@@ -92,9 +109,9 @@ function MainPage() {
               letterSpacing: '0.01em',
               color: 'inherit',
               textDecoration: 'none',
+              fontSize: {xs: "1.5em", sm: "1.5em", md: "2.5em"},
               // cursor: 'pointer',
             }}
-            
           >
             <span style={{cursor: 'pointer'}} onClick={() => window.location.reload()}>FinTracker</span>
           </Typography>

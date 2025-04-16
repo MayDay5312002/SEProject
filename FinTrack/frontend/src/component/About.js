@@ -34,7 +34,7 @@ const About = () => {
               <Avatar src={developer.image} alt={developer.name} sx={{ width: 160, height: 160, margin: "auto" }} />
               <CardContent>
                 <Typography variant="h6" className="blue2">{developer.name}</Typography>
-                <Typography variant="body2" color="text.secondary" className="blue2">{developer.role}</Typography>
+                {/* <Typography variant="body2" color="text.secondary" className="blue2">{developer.role}</Typography> */}
               </CardContent>
             </Card>
           </Grid>

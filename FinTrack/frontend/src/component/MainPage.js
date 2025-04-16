@@ -109,7 +109,7 @@ function MainPage() {
               letterSpacing: '0.01em',
               color: 'inherit',
               textDecoration: 'none',
-              fontSize: {xs: "1.5em", sm: "1.5em", md: "2.5em"},
+              fontSize: {xs: "1.5em", sm: "1.5em", md: "4.5vh"},
               // cursor: 'pointer',
             }}
           >

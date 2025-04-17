@@ -76,36 +76,54 @@ export default function BasicModal({transactions, setTransactions}) {
       <Modal
         open={open}
         onClose={handleClose}
-        aria-labelledby="modal-modal-title"
-        aria-describedby="modal-modal-description"
+        // aria-labelledby="modal-modal-title"
+        // aria-describedby="modal-modal-description"
       >
         <Box sx={style}>
-          <Typography id="modal-modal-title" variant="h6" component="h2">
+          <Typography id="modal-modal-title" variant="h5" component="h2" sx={{fontWeight: 500, color: "#0077b6"}}>
             Enter Transaction
           </Typography>
 
           <div>
-            <h2>Category Type</h2>
-            <BasicSelect category={category} setCategory={setCategory} categoryID={categoryID} setCategoryID={setCategoryID}/>
+            <Typography variant="h6" component="h2" sx={{color: "#0077b6"}}>Category</Typography>
+            <BasicSelect category={category} setCategory={setCategory} categoryID={categoryID} setCategoryID={setCategoryID} sx={{color: "#0077b6"}}/>
           </div>
 
           <div>
-            <TextField type='date' value={date} onChange={(e) => setDate(e.target.value)}/>
+            <Typography variant="h6" component="h2" sx={{color: "#0077b6"}}>Date</Typography>
+            <TextField type='date' value={date} onChange={(e) => setDate(e.target.value)} required sx={{color: "#0077b6"}}/>
 
           </div>
           <div>
-          <TextField id="Transaction-Name" label="Transaction-Name" value={name} onChange={(e) => setName(e.target.value)} variant="filled" />
+            <Typography variant="h6" component="h2" sx={{color: "#0077b6"}}>Vendor Name</Typography>
+            <TextField id="Transaction-Name" label="Transaction-Name" value={name} onChange={(e) => setName(e.target.value)} variant="filled" required/>
           </div>
         
           <div>
-            <h2>Amount</h2>
-            <input type='number' min="0.0" value={amount} onChange={(e) => setAmount(e.target.value)}/>
+            <Typography variant="h6" component="h2" sx={{color: "#0077b6"}}>Amount $</Typography>
+            {/* <input type='number' min="0.0" value={amount} onChange={(e) => setAmount(e.target.value)}/> */}
+            <TextField
+              id="amount"
+              label="Amount"
+              type="number"
+              value={amount}
+              onChange={(e) => {
+                const value = parseFloat(e.target.value);
+                if (value >= 0 || e.target.value === '') {
+                  setAmount(e.target.value);
+                }
+              }}
+              variant="filled"
+              sx={{ mb: 2, color: "#0077b6" }}
+              inputProps={{ min: 0.0 }}
+              required
+            />
           </div>
 
           
 
           <div>
-            <Button disabled={date == null || name == null || amount == null ? true : false} onClick={handleTransaction} variant='contained'>Submit transaction</Button>
+            <Button disabled={category == null || date == null || name == null || amount == null ? true : false} onClick={handleTransaction} variant='contained'>Submit transaction</Button>
           </div>
           
           

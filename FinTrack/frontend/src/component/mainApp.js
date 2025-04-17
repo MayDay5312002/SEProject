@@ -5,11 +5,13 @@ Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper
 
 // import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import axios from "axios"; 
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { PieChart } from "@mui/x-charts/PieChart";
 import BasicModal from "../other-components/BasicModal";
+import ChartDashboard from "../other-components/ChartDashboard";
 const months = {
     0: "January",
     1: "February",
@@ -48,6 +50,8 @@ function MainApp() {
     const [searchTerm, setSearchTerm] = useState('');
     const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
     const bottomRef = useRef(null);
+
+    const navigate = useNavigate();
   
     const handleSendMessage = async () => {
       if (!message.trim()) return;
@@ -93,6 +97,8 @@ function MainApp() {
       })
       .catch((error) => {
         console.error("Error fetching categories:", error);
+        localStorage.setItem("isAuthenticated", "false");
+        navigate("/"); 
       });
     }, []);
 
@@ -105,18 +111,13 @@ function MainApp() {
       })
       .catch((error) => {
         console.error("Error fetching transactions:", error);
+        localStorage.setItem("isAuthenticated", "false");
+        navigate("/"); 
       });
     }, []);
 
 
 
-    // useEffect(() => {
-    //   console.log('Transactions updated:', transactions);
-    // }, [transactions]);
-
-    // useEffect(() => {
-    //   console.log('Categories updated:', categories);
-    // }, [categories]);
   
     
 
@@ -181,7 +182,7 @@ function MainApp() {
         </Typography>
         <Typography variant="body2" className="blue2" sx={{ fontWeight: "600" }}>$2,000.00</Typography>
         <LinearProgress variant="determinate" value={50} sx={{ height: 10, borderRadius: 5, my: 5 }} />
-        <PieChart
+        {/* <PieChart
           series={[
             {
               data: [
@@ -193,7 +194,9 @@ function MainApp() {
           ]}
           width={350}
           height={200}
-        />
+        /> */}
+        <ChartDashboard transactions={transactions} categories={categories} getCategories={getCategories}/>
+
         <div style={{paddingBottom: "5em"}}>
             <Box
               display="flex"
@@ -211,7 +214,7 @@ function MainApp() {
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
-                <BasicModal transactions={transactions} setTransactions={setTransactions}/>
+                <BasicModal transactions={transactions} setTransactions={setTransactions}/> {/* Add Transaction Button */}
                 <TableContainer>
                   <Table aria-label="expenses table">
                     <TableHead>

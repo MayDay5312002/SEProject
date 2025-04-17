@@ -10,6 +10,8 @@ load_dotenv()#loading the .env file
 API_KEY = os.getenv("OPENAI_API_KEY")
 BUSINESS_NEWS = os.getenv("buss_news_api")
 client = openai.OpenAI(api_key=API_KEY)
+
+
 def get_news_today():
     # print(BUSINESS_NEWS)
     response = requests.get(f"https://newsapi.org/v2/top-headlines?country=us&category=business&apiKey={BUSINESS_NEWS}")

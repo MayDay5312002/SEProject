@@ -29,6 +29,7 @@
     "@mui/material": "^7.0.1",
     "@mui/x-charts": "^7.28.0",
     "axios": "^1.8.4",
-    "react-router-dom": "^7.4.0"
+    "react-router-dom": "^7.4.0",
+    "recharts": "^2.15.2"
   }
 }

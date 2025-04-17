@@ -7,6 +7,7 @@ const SignUp = () => {
   const [formData, setFormData] = useState({
     username: "",
     password: "",
+    emai: "",
   });
   const [confirmPassword, setConfirmPassword] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
@@ -77,6 +78,11 @@ const SignUp = () => {
         <InputLabel htmlFor="username" sx={{color: "#0077b6"}}>Username</InputLabel>
         <TextField helperText=" " id="username" name="username" color="#03045e" value={formData.username} onChange={handleChange} sx={{width: '12em'}} required/>
 
+        <InputLabel htmlFor="email" sx={{color: "#0077b6"}}>Email Address</InputLabel>
+        <TextField helperText="" id="email" name="email" type="email" color="#03045e" onChange={handleChange} value={formData.email} sx={{width: '12em', mb: 2}} required/>
+
+        {/* <InputLabel htmlFor="password" sx={{color: "#0077b6"}}>Last Name</InputLabel>
+        <TextField helperText="" id="password" name="password" type="password" color="#03045e" onChange={handleChange} value={formData.password} sx={{width: '12em'}} required/> */}
         <InputLabel htmlFor="confirmPassword" sx={{color: "#0077b6"}}>Confirm Password</InputLabel>
         <TextField helperText="" id="confirmPassword" name="confirmPassword" type="password" color="#03045e" onChange={handleConfirmPasswordChange} value={confirmPassword} sx={{width: '12em', mb: 2.2}} required/>
         
@@ -84,6 +90,7 @@ const SignUp = () => {
 
         <InputLabel htmlFor="password" sx={{color: "#0077b6"}}>Password</InputLabel>
         <TextField helperText="" id="password" name="password" type="password" color="#03045e" onChange={handleChange} value={formData.password} sx={{width: '12em'}} required/>
+        
         {/* <Typography variant="caption" component="caption">Wrong Credentials</Typography> */}
         <Typography variant="caption" gutterBottom sx={{textAlign: 'center', mt: 1, height: '0.6em', color: 'red'}}>
         {errorMsg}

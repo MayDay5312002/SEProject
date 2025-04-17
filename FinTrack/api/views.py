@@ -1,6 +1,6 @@
 from django.shortcuts import render
 import openai
-import datetime
+import datetime, re, hashlib
 import os, requests, json
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -19,7 +19,6 @@ from datetime import timedelta
 from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
 from rest_framework.status import HTTP_201_CREATED, HTTP_400_BAD_REQUEST
 from django.db import connection
-import re
 # from pprint import pprint
 
 
@@ -319,6 +318,15 @@ def loginAccount(request):
                 samesite='Strict'
             )
 
+            response.set_cookie(
+                'account_id_hashed',
+                hash_account_id(serializer.data['id']),
+                httponly=True,
+                secure=True,
+                max_age=timedelta(days=15),
+                samesite='Strict'
+            )
+
             # Return the response with the tokens
             return response
           
@@ -337,15 +345,23 @@ def registerAccount(request):
         data = request.data
         username = data.get('username')
         password = data.get('password')
+        email = data.get('email')
 
         if not username or not password:
             return Response({'error': 'Username and password are required'}, status=HTTP_400_BAD_REQUEST)
 
         if User.objects.filter(username=username).exists():
             return Response({'error': 'Username already exists'}, status=HTTP_400_BAD_REQUEST)
+        if len(username) < 4:
+            return Response({'error': 'Username ≥ 4 chars'}, status=HTTP_400_BAD_REQUEST)
+        if len(password) < 8:
+            return Response({'error': 'Password ≥ 8 chars'}, status=HTTP_400_BAD_REQUEST)
+        if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
+            return Response({'error': 'Invalid email address'}, status=HTTP_400_BAD_REQUEST)
+
 
         hashedPassword = make_password(password)
-        User.objects.create(username=username, password=hashedPassword)
+        User.objects.create(username=username, password=hashedPassword, email=email)
         return Response({'success': 'User created'}, status=HTTP_201_CREATED)
 
     except Exception as e:
@@ -361,12 +377,17 @@ def logoutAccount(request):
     response.delete_cookie('refresh_token')
     response.delete_cookie('account_id')
     response.delete_cookie('access_token')
+    response.delete_cookie('account_id_hashed')
     return response
 
 class AuthenticateView(APIView):
     def get(self, request):
         access_token = request.COOKIES.get("access_token")
         refresh_token = request.COOKIES.get("refresh_token")
+        account_id = request.COOKIES.get("account_id")
+        account_id_hashed = request.COOKIES.get("account_id_hashed")
+        if not check_hashed_account_id(account_id, account_id_hashed):
+            raise Response({"error": "Invalid account id"}, status=401)
         print("access token", access_token)
         print("refresh token", refresh_token)
         if access_token and refresh_token:
@@ -390,6 +411,8 @@ class AuthenticateView(APIView):
                             path="/",
                             max_age=timedelta(days=15)
                         )
+                        with connection.cursor() as cursor:
+                            cursor.callproc("insertRefreshToken", [refresh_token, account_id])
                         return response
                     except Exception as e:
                         print("refresh token error", e)
@@ -399,24 +422,6 @@ class AuthenticateView(APIView):
 
         return Response({"error": "Access token and refresh token not found."}, status=401)
 
-def authenticate_user(request):
-    access_token = request.COOKIES.get("access_token")
-    refresh_token = request.COOKIES.get("refresh_token")
-
-    if access_token and refresh_token:
-        # Validate the access token
-        try:
-            AccessToken(access_token)
-            RefreshToken(refresh_token)
-            return None
-        except Exception:
-            # Validate the refresh token
-            try:
-                refresh_token=RefreshToken(refresh_token)
-                return str(refresh_token.access_token)
-            except Exception as e:
-                print("refresh token error", e)
-                raise Exception(str(e))
 
 
 
@@ -426,7 +431,16 @@ def authenticate_user(request):
 # "requires a bearer token that authetnicates this "
 @api_view(['POST'])
 def addTransaction(request):
-    authenticate_user(request)
+    response = Response(status=200)
+    new_access_token = authenticate_user(request)
+    response.set_cookie(
+        'access_token',
+        new_access_token,
+        httponly=True,
+        secure=True,
+        max_age=timedelta(days=15), 
+        samesite='Strict'
+    )
     accountID = request.COOKIES.get("account_id")
     # Make a copy of request.data because it's immutable
     category = request.data.get('category')
@@ -440,52 +454,54 @@ def addTransaction(request):
     with connection.cursor() as cursor:
         cursor.callproc("createTransaction", [date, vendor_name, amount, category, accountID])
         cursor.fetchall()
-
-    return Response({"message": "Transaction added successfully"}, status=200)
-
-
-
-
-
-
-"API to get specific user "
-"purpose used to set the http cookie to put the transaciton and budge "
-@api_view(['POST'])
-def getAccountID(request):
-    authenticate_user(request)
-    username = request.data.get('username')
-    user = User.objects.filter(username=username).first()
-
-    response = Response({
-        'set_cookie' : "success",
-        'account_id': user.id
-
-    }, status=200)
-
-    response.set_cookie(
-        'account_id',
-        user.id,
-        httponly=True,
-        secure=True,
-        max_age=timedelta(days=15),
-        samesite='Strict'
-    )
-
+    # response.data["message"] = "Transaction added successfully"
+    response.data = {"message": "Transaction added successfully"}
     return response
+    # return Response({"message": "Transaction added successfully"}, status=200)
 
 
-@api_view(['POST'])
-def verifyRefreshToken(request):
-    authenticate_user(request)
-    refreshToken = request.COOKIES.get('refresh_token')
 
-    if(not refreshToken):
-        return Response({"message":"refreshToken does not exist"}, status=404)
-    try:
-        token = RefreshToken(refreshToken)
-        return Response({"message":"refresh token does exist assuming always true "}, status=200)
-    except Exception as e:
-        return Response({"message":"refresh token invalid"}, status=404)
+
+
+
+# "API to get specific user "
+# "purpose used to set the http cookie to put the transaciton and budge "
+# @api_view(['POST'])
+# def getAccountID(request):
+#     authenticate_user(request)
+#     username = request.data.get('username')
+#     user = User.objects.filter(username=username).first()
+
+#     response = Response({
+#         'set_cookie' : "success",
+#         'account_id': user.id
+
+#     }, status=200)
+
+#     response.set_cookie(
+#         'account_id',
+#         user.id,
+#         httponly=True,
+#         secure=True,
+#         max_age=timedelta(days=15),
+#         samesite='Strict'
+#     )
+
+#     return response
+
+
+# @api_view(['POST'])
+# def verifyRefreshToken(request):
+#     authenticate_user(request)
+#     refreshToken = request.COOKIES.get('refresh_token')
+
+#     if(not refreshToken):
+#         return Response({"message":"refreshToken does not exist"}, status=404)
+#     try:
+#         token = RefreshToken(refreshToken)
+#         return Response({"message":"refresh token does exist assuming always true "}, status=200)
+#     except Exception as e:
+#         return Response({"message":"refresh token invalid"}, status=404)
 
 
 #This is for case where in memory access token is null or empty
@@ -522,14 +538,25 @@ def resetAccessToken(request):
     
 @api_view(['GET'])
 def getCategories(request):
-    authenticate_user(request)
+    response = Response(status=200)
+    new_access_token = authenticate_user(request)
+    response.set_cookie(
+        'access_token',
+        new_access_token,
+        httponly=True,
+        secure=True,
+        max_age=timedelta(days=15), 
+        samesite='Strict'
+    )
     with connection.cursor() as cursor:
         cursor.callproc("getAllCategories", [])
         headers = [col[0] for col in cursor.description]
         results = cursor.fetchall()
         results = [{headers[0]: row[0], headers[1]: row[1]} for row in results]
         print("Results:", results)
-    return Response({"categories": results}, status=200)
+    response.data = {"categories": results}
+    return response
+    # return Response({"categories": results}, status=200)
 
 
 @api_view(['GET'])
@@ -542,7 +569,16 @@ def getUserTransactions(request):
 
     # this would jsut be call with curernt account id in token
     # account ID woould be in the http only cookie
-    authenticate_user(request)
+    response = Response(status=200)
+    new_access_token = authenticate_user(request)
+    response.set_cookie(
+        'access_token',
+        new_access_token,
+        httponly=True,
+        secure=True,
+        max_age=timedelta(days=15), 
+        samesite='Strict'
+    )
     accountID = request.COOKIES.get("account_id") #account id cookie
 
     with connection.cursor() as cursor:
@@ -551,5 +587,40 @@ def getUserTransactions(request):
         results = cursor.fetchall()
         results = [{headers[0]: row[0], headers[1]: row[1], headers[2]: row[2], headers[3]: row[3], headers[4]: row[4], headers[5]: row[5]} for row in results]
         print("Results:", results)
-    return Response({"transactions": results}, status=200)
+    response.data = {"transactions": results}
+    return response
+
+
+def authenticate_user(request):
+    access_token = request.COOKIES.get("access_token")
+    refresh_token = request.COOKIES.get("refresh_token")
+    account_id = request.COOKIES.get("account_id")
+    account_id_hashed = request.COOKIES.get("account_id_hashed")
+    if not check_hashed_account_id(account_id, account_id_hashed):
+        raise Exception("Invalid account id")
+    
+    if access_token and refresh_token:
+        # Validate the access token
+        try:
+            AccessToken(access_token)
+            RefreshToken(refresh_token)
+            return access_token
+        except Exception:
+            # Validate the refresh token
+            try:
+                refresh_token=RefreshToken(refresh_token)
+                return str(refresh_token.access_token)
+            except Exception as e:
+                print("refresh token error", e)
+                raise Exception(str(e))
+
+def hash_account_id(account_id: int) -> str:
+    num_value = os.getenv("account_id_salt") + str(account_id)
+    return hashlib.sha256(num_value.encode()).hexdigest()
+
+def check_hashed_account_id(account_id: int, account_id_hashed: str) -> bool:
+    num_value = os.getenv("account_id_salt") + str(account_id)
+    hashed_value = hashlib.sha256(num_value.encode()).hexdigest()
+    return hashed_value == account_id_hashed
+    
 

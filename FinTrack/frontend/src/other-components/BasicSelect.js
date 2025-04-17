@@ -5,11 +5,13 @@ import MenuItem from '@mui/material/MenuItem';
 import FormControl from '@mui/material/FormControl';
 import Select from '@mui/material/Select';
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const BasicSelect = ({category, setCategory,categoryID, setCategoryID, }) => {
  
 
   const[categories , setCategories] = useState([]);
+  const navigate = useNavigate();
       useEffect(() =>{
           //so this is called or mounted when the useEffect isloaded
           // so downside that the api is going to be called ever time it is open
@@ -22,7 +24,9 @@ const BasicSelect = ({category, setCategory,categoryID, setCategoryID, }) => {
                   setCategories(data["categories"]);
                 //   console.data(categories)
               }catch(error){
-                  console.log("error fetching categories", error);
+                localStorage.setItem("isAuthenticated", "false");
+                navigate("/"); 
+                console.log("error fetching categories", error);
               }
           }
           fetchCategories(); // on mount call api to set categories 
@@ -39,20 +43,23 @@ const BasicSelect = ({category, setCategory,categoryID, setCategoryID, }) => {
   return (
     <Box sx={{ minWidth: 120 }}>
       <FormControl fullWidth>
-        <InputLabel id="demo-simple-select-label">Category</InputLabel>
         <Select
-          labelId="demo-simple-select-label"
           id="demo-simple-select"
           value={categoryID}
-          label="Category"
           onChange={handleChange}
+          required
+          displayEmpty
         >
+          <MenuItem value="" disabled>
+            Select a category
+          </MenuItem>
           {
             categories.map((categoryItem) => (
-              <MenuItem key={categoryItem.id} value={categoryItem.id}>{categoryItem.category_name}</MenuItem>
+              <MenuItem key={categoryItem.id} value={categoryItem.id}>
+                {categoryItem.category_name}
+              </MenuItem>
             ))
           }
-          
         </Select>
       </FormControl>
     </Box>

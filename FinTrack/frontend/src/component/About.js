@@ -3,10 +3,10 @@ import { Container, Typography, Grid, Card, CardContent, Avatar, Divider } from 
 
 const developers = [
   { name: "Luke Evarretta", role: "Programmer", image: "http://localhost:8000/static/images/levarretta.jpg" },
-  { name: "James Ngo", role: "Team Lead", image: "https://via.placeholder.com/150" },
-  { name: "Kian Aliwalas", role: "Quality Assurance", image: "https://via.placeholder.com/150" },
-  { name: "Amadea Doleci", role: "Database Administrator", image: "https://via.placeholder.com/150" },
-  { name: "Alejandro Dorado", role: "Modeling & Design", image: "https://via.placeholder.com/150" },
+  { name: "James Ngo", role: "Team Lead", image: "https://placehold.co/150?text=J" },
+  { name: "Kian Aliwalas", role: "Quality Assurance", image: "https://placehold.co/150?text=K" },
+  { name: "Amadea Doleci", role: "Database Administrator", image: "https://placehold.co/150?text=A" },
+  { name: "Alejandro Dorado", role: "Modeling & Design", image: "https://placehold.co/150?text=A" },
 ];
 
 const About = () => {

@@ -590,6 +590,67 @@ def getUserTransactions(request):
     response.data = {"transactions": results}
     return response
 
+class CreateBudgetView(APIView):
+    def post(self, request):
+        account_id = request.COOKIES.get("account_id")
+        response = Response(status=200)
+        new_access_token = authenticate_user(request)
+        response.set_cookie(
+            'access_token',
+            new_access_token,
+            httponly=True,
+            secure=True,
+            max_age=timedelta(days=15), 
+            samesite='Strict'
+        )
+        # date = request.data.get('date')
+        category = request.data.get('category')
+        amount = float(request.data.get('amount'))
+        with connection.cursor() as cursor:
+            cursor.callproc("createBudget", [amount, account_id, category])
+            cursor.fetchall()
+        response.data = {"message": "Budget created successfully"}
+        return response
+    
+class GetAllUserBudgetsView(APIView):
+    def get(self, request):
+        response = Response(status=200)
+        new_access_token = authenticate_user(request)
+        response.set_cookie(
+            'access_token',
+            new_access_token,
+            httponly=True,
+            secure=True,
+            max_age=timedelta(days=15), 
+            samesite='Strict'
+        )
+        account_id = request.COOKIES.get("account_id")
+        with connection.cursor() as cursor:
+            cursor.callproc("getAllBudget", [account_id])
+            headers = [col[0] for col in cursor.description]
+            results = cursor.fetchall()
+            results = [{headers[1]: row[1], headers[3]: row[3]} for row in results]
+            print("Results:", results)
+        response.data = {"budgets": results}
+        return response
+    
+class GetUsernameView(APIView):
+    def get(self, request):
+        response = Response(status=200)
+        new_access_token = authenticate_user(request)
+        response.set_cookie(
+            'access_token',
+            new_access_token,
+            httponly=True,
+            secure=True,
+            max_age=timedelta(days=15), 
+            samesite='Strict'
+        )
+        username = User.objects.filter(id=request.COOKIES.get("account_id")).first().username  
+        response.data = {"username": username}
+        return response
+        
+
 
 def authenticate_user(request):
     access_token = request.COOKIES.get("access_token")

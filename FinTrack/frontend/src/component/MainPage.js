@@ -111,6 +111,7 @@ function MainPage() {
               color: 'inherit',
               textDecoration: 'none',
               fontSize: {xs: "1.5em", sm: "1.5em", md: "4.5vh"},
+              px: 2
               // cursor: 'pointer',
             }}
           >

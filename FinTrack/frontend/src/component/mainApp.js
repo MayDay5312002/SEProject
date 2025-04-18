@@ -1,6 +1,6 @@
 import React from "react";
-import { Container, Typography, Avatar, LinearProgress, Box, TextField, Button, IconButton, Collapse, CircularProgress,
-Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper
+import { Container, Typography, Avatar, Box, TextField, Button, IconButton, Collapse, CircularProgress,
+Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Divider
 } from "@mui/material";
 
 // import { createTheme, ThemeProvider } from '@mui/material/styles';
@@ -9,9 +9,10 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios"; 
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import DeleteIcon from '@mui/icons-material/Delete';
-import { PieChart } from "@mui/x-charts/PieChart";
 import BasicModal from "../other-components/BasicModal";
 import ChartDashboard from "../other-components/ChartDashboard";
+import CategoryProgressBars from "../other-components/CategoryProgressBars";
+import BasicModalBudget from "../other-components/BasicModalBudget";
 const months = {
     0: "January",
     1: "February",
@@ -27,28 +28,19 @@ const months = {
     11: "December",
 };
 
-// const theme = createTheme({
-//   components: {
-//     MuiMenuItem: {
-//       styleOverrides: {
-//         root: {
-//           fontSize: '2vh',
-//           // paddingTop: '10px',
-//           // paddingBottom: '10px',
-//         },
-//       },
-//     },
-//   },
-// });
 function MainApp() {
     const currentMonth = new Date().getMonth(); 
     const [expanded, setExpanded] = useState(false);
     const [message, setMessage] = useState("");
     const [chat, setChat] = useState([]);
     const [transactions, setTransactions] = useState([]);
+    const [budgets, setBudgets] = useState([]);
     const [categories, setCategories] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
-    const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
+    const [sortTransConfig, setSortTransConfig] = useState({ key: null, direction: "asc" });
+    const [sortBudgetConfig, setSortBudgetConfig] = useState({ key: null, direction: "asc" });
+    const [totalBudget, setTotalBudget] = useState(0);
+    const [username, setUsername] = useState("");
     const bottomRef = useRef(null);
 
     const navigate = useNavigate();
@@ -114,8 +106,40 @@ function MainApp() {
         localStorage.setItem("isAuthenticated", "false");
         navigate("/"); 
       });
+      axios.get("http://127.0.0.1:8000/api/getUserBudgets/")
+      .then((response) => {
+        // console.log(response.data["budgets"]);
+        setBudgets(response.data["budgets"]);
+        // console.log(budgets);
+      })
+      .catch((error) => {
+        console.error("Error fetching budgets:", error);
+        localStorage.setItem("isAuthenticated", "false");
+        navigate("/"); 
+      });
+
+      axios.get("http://127.0.0.1:8000/api/getUsername/")
+      .then((response) => {
+        // console.log(response.data["budgets"]);
+        setUsername(response.data["username"]);
+        // console.log(budgets);
+      })
+      .catch((error) => {
+        console.error("Error fetching budgets:", error);
+        localStorage.setItem("isAuthenticated", "false");
+        navigate("/"); 
+      });
+
     }, []);
 
+    useEffect(() => {
+      let total = 0;
+      console.log("Yerr");
+      budgets.forEach((budget) => {
+        total += budget.amount;
+      });
+      setTotalBudget(total);
+    }, [budgets]);
 
 
   
@@ -135,7 +159,7 @@ function MainApp() {
 
     const getCategories = (category_id) => {return categories.find(category => category.id === category_id)?.category_name;} //returns a string of a category name
     // this is for search
-    const filteredData = transactions.filter((row) =>
+    const filteredTransactionData = transactions.filter((row) =>
       (row.transaction_name && row.transaction_name.toLowerCase().includes(searchTerm.toLowerCase())) || // Check for transaction_name
       (getCategories(row.category_id) && getCategories(row.category_id).toLowerCase().includes(searchTerm.toLowerCase())) || // Check if category exists
       (row.transaction_date && row.transaction_date.includes(searchTerm)) || // Ensure row.date is a string
@@ -143,45 +167,86 @@ function MainApp() {
     );
     
 
-    const sortedData = [...filteredData].sort((a, b) => {
-      if (!sortConfig.key) return 0;
+    const sortedFinancialData = [...filteredTransactionData].sort((a, b) => {
+      if (!sortTransConfig.key) return 0;
     
-      let aValue = a[sortConfig.key];
-      let bValue = b[sortConfig.key];
+      let aValue = a[sortTransConfig.key];
+      let bValue = b[sortTransConfig.key];
     
       // Handle numeric sort
       if (typeof aValue === "number" && typeof bValue === "number") {
-        return sortConfig.direction === "asc" ? aValue - bValue : bValue - aValue;
+        return sortTransConfig.direction === "asc" ? aValue - bValue : bValue - aValue;
       }
     
       // Handle string sort
       aValue = String(aValue).toLowerCase();
       bValue = String(bValue).toLowerCase();
     
-      if (aValue < bValue) return sortConfig.direction === "asc" ? -1 : 1;
-      if (aValue > bValue) return sortConfig.direction === "asc" ? 1 : -1;
+      if (aValue < bValue) return sortTransConfig.direction === "asc" ? -1 : 1;
+      if (aValue > bValue) return sortTransConfig.direction === "asc" ? 1 : -1;
       return 0;
     });
 
-    const handleSort = (key) => {
-      setSortConfig((prev) => ({
+    const handleTransactionSort = (key) => {
+      setSortTransConfig((prev) => ({
+        key,
+        direction: prev.key === key && prev.direction === "asc" ? "desc" : "asc",
+      }));
+    };
+
+
+    const filteredBudgetData = budgets.filter((row) =>
+      // (row.transaction_name && row.transaction_name.toLowerCase().includes(searchTerm.toLowerCase())) || // Check for transaction_name
+      (getCategories(row.category_id) && getCategories(row.category_id).toLowerCase().includes(searchTerm.toLowerCase())) || // Check if category exists
+      // (row.transaction_date && row.transaction_date.includes(searchTerm)) || // Ensure row.date is a string
+      (row.amount && row.amount.toString().includes(searchTerm)) // Ensure row.amount is a number 
+    );
+
+
+    const sortedBudgetData = [...filteredBudgetData].sort((a, b) => {
+      if (!sortBudgetConfig.key) return 0;
+    
+      let bValue = b[sortBudgetConfig.key];
+      let aValue = a[sortBudgetConfig.key];
+    
+      // Handle numeric sort
+      if (typeof aValue === "number" && typeof bValue === "number") {
+        return sortBudgetConfig.direction === "asc" ? aValue - bValue : bValue - aValue;
+      }
+    
+      // Handle string sort
+      aValue = String(aValue).toLowerCase();
+      bValue = String(bValue).toLowerCase();
+    
+      if (aValue < bValue) return sortBudgetConfig.direction === "asc" ? -1 : 1;
+      if (aValue > bValue) return sortBudgetConfig.direction === "asc" ? 1 : -1;
+      return 0;
+    });
+
+
+    
+    const handleBudgetSort = (key) => {
+      setSortBudgetConfig((prev) => ({
         key,
         direction: prev.key === key && prev.direction === "asc" ? "desc" : "asc",
       }));
     };
     
+    
 
- 
+    // console.log("budgets: ",budgets);
 
     
     return (        
         <Container maxWidth="md" sx={{ textAlign: "center", mt: 5 }}>
-        <Avatar alt="FinTrack" src="http://localhost:8000/static/images/Logo.png" sx={{ width: 80, height: 80, margin: "auto" }} />
+        <Avatar alt={username} src={`https://placehold.co/150?text=${username.charAt(0).toUpperCase()}`} sx={{ width: 80, height: 80, margin: "auto" }} />
         <Typography variant="h6" className="blue2" sx={{ mt: 1.5 }}>
-          {months[currentMonth]}'s Budget
+          {months[currentMonth]}'s Total Budget
         </Typography>
-        <Typography variant="body2" className="blue2" sx={{ fontWeight: "600" }}>$2,000.00</Typography>
-        <LinearProgress variant="determinate" value={50} sx={{ height: 10, borderRadius: 5, my: 5 }} />
+        <Typography variant="body2" className="blue2" sx={{ fontWeight: "600" }}>${totalBudget}</Typography>
+        {/* <LinearProgress variant="determinate" value={50} sx={{ height: 10, borderRadius: 5, my: 5 }} /> */}
+        <Divider sx={{ my: 2 }} />
+        <CategoryProgressBars />
         {/* <PieChart
           series={[
             {
@@ -219,22 +284,22 @@ function MainApp() {
                   <Table aria-label="expenses table">
                     <TableHead>
                       <TableRow>
-                        <TableCell onClick={() => handleSort("transaction_date")} style={{ cursor: "pointer" }}>
-                          <strong>Date {sortConfig.key === "transaction_date" ? (sortConfig.direction === "asc" ? "⬆️" : "⬇️") : ""}</strong>
+                        <TableCell onClick={() => handleTransactionSort("transaction_date")} style={{ cursor: "pointer" }}>
+                          <strong>Date {sortTransConfig.key === "transaction_date" ? (sortTransConfig.direction === "asc" ? "⬆️" : "⬇️") : ""}</strong>
                         </TableCell>
-                        <TableCell onClick={() => handleSort("transaction_name")} style={{ cursor: "pointer" }}>
-                          <strong>Vendor Name {sortConfig.key === "transaction_name" ? (sortConfig.direction === "asc" ? "⬆️" : "⬇️") : ""}</strong>
+                        <TableCell onClick={() => handleTransactionSort("transaction_name")} style={{ cursor: "pointer" }}>
+                          <strong>Vendor Name {sortTransConfig.key === "transaction_name" ? (sortTransConfig.direction === "asc" ? "⬆️" : "⬇️") : ""}</strong>
                         </TableCell>
-                        <TableCell onClick={() => handleSort("amount")} style={{ cursor: "pointer" }} align="right">
-                          <strong>Amount ($) {sortConfig.key === "amount" ? (sortConfig.direction === "asc" ? "⬆️" : "⬇️") : ""}</strong>
+                        <TableCell onClick={() => handleTransactionSort("amount")} style={{ cursor: "pointer" }} align="right">
+                          <strong>Amount ($) {sortTransConfig.key === "amount" ? (sortTransConfig.direction === "asc" ? "⬆️" : "⬇️") : ""}</strong>
                         </TableCell>
-                        <TableCell onClick={() => handleSort("category_id")} style={{ cursor: "pointer" }}>
-                          <strong>Category {sortConfig.key === "category_id" ? (sortConfig.direction === "asc" ? "⬆️" : "⬇️") : ""}</strong>
+                        <TableCell onClick={() => handleTransactionSort("category_id")} style={{ cursor: "pointer" }}>
+                          <strong>Category {sortTransConfig.key === "category_id" ? (sortTransConfig.direction === "asc" ? "⬆️" : "⬇️") : ""}</strong>
                         </TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
-                      {sortedData.map((row, index) => (
+                      {sortedFinancialData.map((row, index) => (
                         <TableRow key={index}>
                           <TableCell>{row.transaction_date}</TableCell>
                           <TableCell>{row.transaction_name}</TableCell>
@@ -242,7 +307,7 @@ function MainApp() {
                           <TableCell>{typeof row.category_id === "string" ? row.category_id : getCategories(row.category_id)}</TableCell>
                         </TableRow>
                       ))}
-                      {filteredData.length === 0 && (
+                      {filteredTransactionData.length === 0 && (
                         <TableRow>
                           <TableCell colSpan={4} align="center">
                             No results found.
@@ -253,6 +318,8 @@ function MainApp() {
                   </Table>
                 </TableContainer>
               </Paper>
+
+
               <Paper sx={{ padding: "2em", borderRadius: "3em"}}>
                 <Typography variant="h5" gutterBottom className="blue2" sx={{fontWeight: "500"}}>Budgets</Typography>
                 <TextField
@@ -263,35 +330,35 @@ function MainApp() {
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
-                <BasicModal transactions={transactions} setTransactions={setTransactions}/>
+                <BasicModalBudget budgets={budgets} setBudgets={setBudgets} getCategory={getCategories}/>
                 <TableContainer>
                   <Table aria-label="expenses table">
                     <TableHead>
                       <TableRow>
-                        <TableCell onClick={() => handleSort("transaction_date")} style={{ cursor: "pointer" }}>
-                          <strong>Date {sortConfig.key === "transaction_date" ? (sortConfig.direction === "asc" ? "⬆️" : "⬇️") : ""}</strong>
+                        {/* <TableCell onClick={() => handleTransactionSort("transaction_date")} style={{ cursor: "pointer" }}>
+                          <strong>Date {sortTransConfig.key === "transaction_date" ? (sortTransConfig.direction === "asc" ? "⬆️" : "⬇️") : ""}</strong>
                         </TableCell>
-                        <TableCell onClick={() => handleSort("transaction_name")} style={{ cursor: "pointer" }}>
-                          <strong>Vendor Name {sortConfig.key === "transaction_name" ? (sortConfig.direction === "asc" ? "⬆️" : "⬇️") : ""}</strong>
+                        <TableCell onClick={() => handleTransactionSort("transaction_name")} style={{ cursor: "pointer" }}>
+                          <strong>Vendor Name {sortTransConfig.key === "transaction_name" ? (sortTransConfig.direction === "asc" ? "⬆️" : "⬇️") : ""}</strong>
+                        </TableCell> */}
+                        <TableCell onClick={() => handleBudgetSort("amount")} style={{ cursor: "pointer" }} align="right">
+                          <strong>Amount ($) {sortBudgetConfig.key === "amount" ? (sortBudgetConfig.direction === "asc" ? "⬆️" : "⬇️") : ""}</strong>
                         </TableCell>
-                        <TableCell onClick={() => handleSort("amount")} style={{ cursor: "pointer" }} align="right">
-                          <strong>Amount ($) {sortConfig.key === "amount" ? (sortConfig.direction === "asc" ? "⬆️" : "⬇️") : ""}</strong>
-                        </TableCell>
-                        <TableCell onClick={() => handleSort("category_id")} style={{ cursor: "pointer" }}>
-                          <strong>Category {sortConfig.key === "category_id" ? (sortConfig.direction === "asc" ? "⬆️" : "⬇️") : ""}</strong>
+                        <TableCell onClick={() => handleBudgetSort("category_id")} style={{ cursor: "pointer" }}>
+                          <strong>Category {sortBudgetConfig.key === "category_id" ? (sortBudgetConfig.direction === "asc" ? "⬆️" : "⬇️") : ""}</strong>
                         </TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
-                      {sortedData.map((row, index) => (
+                      {sortedBudgetData.map((row, index) => (
                         <TableRow key={index}>
-                          <TableCell>{row.transaction_date}</TableCell>
-                          <TableCell>{row.transaction_name}</TableCell>
+                          {/* <TableCell>{row.transaction_date}</TableCell>
+                          <TableCell>{row.transaction_name}</TableCell> */}
                           <TableCell align="right">{row.amount.toFixed(2)}</TableCell>
                           <TableCell>{typeof row.category_id === "string" ? row.category_id : getCategories(row.category_id)}</TableCell>
                         </TableRow>
                       ))}
-                      {filteredData.length === 0 && (
+                      {filteredTransactionData.length === 0 && (
                         <TableRow>
                           <TableCell colSpan={4} align="center">
                             No results found.

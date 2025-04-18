@@ -16,7 +16,7 @@ const style = {
   top: '50%',
   left: '50%',
   transform: 'translate(-50%, -50%)',
-  width: "80vw",
+  width: 400,
   bgcolor: 'background.paper',
   border: '2px solid #000',
   boxShadow: 24,
@@ -33,33 +33,41 @@ const style = {
  * submit button
  */
 
-export default function BasicModal({transactions, setTransactions}) {
+export default function BasicModalBudget({budgets, setBudgets, getCategory}) {
 
   //global access token 
 //   const {accessToken , setAccessToken , refreshMount, setRefreshMount} = useAppContext();
 
   const [open, setOpen] = useState(false);
-  const handleOpen = () => setOpen(true);
-  const handleClose = () => setOpen(false);
-
-  //use state for current variables
-  const [ date , setDate] = useState(null);
-  const [ name , setName] = useState(null);
+  // const handleOpen = () => setOpen(true);
+  // const handleClose = () => {setOpen(false)};
+  
   const [ amount , setAmount] = useState(null);
   const [category, setCategory] = useState(null);
   const [categoryID, setCategoryID] = useState(null);
 
+  const handleOpen = () => {
+    setAmount(null);
+    setCategory(null);
+    setCategoryID(null);
+    setOpen(true);
+  };
+  const handleClose = () => {setOpen(false)};
 
-  const handleTransaction = async () => {
-    axios.post("http://127.0.0.1:8000/api/addTransaction/", {"date": date, "amount": amount, "category": category, "name": name})
+
+  const handleBudget = async () => {
+    axios.post("http://127.0.0.1:8000/api/createBudget/", {"amount": amount, "category": category})
     .then((response) => {
       console.log("Transaction added successfully:", response.data);
     //   console.log("asddas",category, typeof category);
-      setTransactions((prevTransactions) => [...prevTransactions, {transaction_date: date, amount: parseFloat(amount), category_id: category, transaction_name: name}]);//not categoryId
-      setDate("");
-      setAmount("");
-      setCategory(null);
-      setName("");
+      // let hasDuplicate = budgets.find(item => getCategory(item.category_id) === getCategory(category));
+      // console.log("hasDuplicate", hasDuplicate);
+      // if (!hasDuplicate) {
+        setBudgets((prevBudgets) => [...prevBudgets, {amount: parseFloat(amount), category_id: category}]);
+      // }
+      // setAmount(null);
+      // setCategory(null);
+      // setCategoryID(null);
       handleClose();
     //   clearFields();
     })
@@ -67,17 +75,17 @@ export default function BasicModal({transactions, setTransactions}) {
       console.error("Error adding transaction:", error);
     });
     
-    setDate("");
-    setAmount("");
+    // setDate("");
+    setAmount(null);
     setCategory(null);
-    setName("");
+    // setName("");
+    setCategoryID(null);
     handleClose();
   }
 
   return (
-    // <div style={{width: "100%"}}>
-    <Box sx={{width: "100%"}}>
-      <Button onClick={handleOpen}>Add Transaction</Button>
+    <div style={{width: "100%"}}>
+      <Button onClick={handleOpen}>Add Budget</Button>
       <Modal
         open={open}
         onClose={handleClose}
@@ -94,7 +102,7 @@ export default function BasicModal({transactions, setTransactions}) {
 
         }}>
           <Typography id="modal-modal-title" variant="h5" component="h2" sx={{fontWeight: 500, color: "#0077b6"}}>
-            Enter Transaction
+            Enter Budget
           </Typography>
 
           <div>
@@ -102,15 +110,6 @@ export default function BasicModal({transactions, setTransactions}) {
             <BasicSelect category={category} setCategory={setCategory} categoryID={categoryID} setCategoryID={setCategoryID} sx={{color: "#0077b6"}}/>
           </div>
 
-          <div>
-            <Typography variant="h6" component="h2" sx={{color: "#0077b6"}}>Date</Typography>
-            <TextField type='date' value={date} onChange={(e) => setDate(e.target.value)} required sx={{color: "#0077b6"}}/>
-
-          </div>
-          <div>
-            <Typography variant="h6" component="h2" sx={{color: "#0077b6"}}>Vendor Name</Typography>
-            <TextField id="Transaction-Name" label="Transaction-Name" value={name} onChange={(e) => setName(e.target.value)} variant="filled" required/>
-          </div>
         
           <div>
             <Typography variant="h6" component="h2" sx={{color: "#0077b6"}}>Amount $</Typography>
@@ -122,6 +121,7 @@ export default function BasicModal({transactions, setTransactions}) {
               value={amount}
               onChange={(e) => {
                 const value = parseFloat(e.target.value);
+
                 if (value >= 0 || e.target.value === '') {
                   setAmount(e.target.value);
                 }
@@ -136,7 +136,7 @@ export default function BasicModal({transactions, setTransactions}) {
           
 
           <div>
-            <Button disabled={category == null || date == null || name == null || amount == null ? true : false} onClick={handleTransaction} variant='contained'>Submit transaction</Button>
+            <Button disabled={category == null || amount == null ? true : false} onClick={handleBudget} variant='contained'>Submit budget</Button>
           </div>
           
           
@@ -146,7 +146,6 @@ export default function BasicModal({transactions, setTransactions}) {
           
         </Box>
       </Modal>
-    {/* // </div> */}
-    </Box>
+    </div>
   );
 }

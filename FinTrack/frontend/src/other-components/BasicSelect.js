@@ -7,8 +7,12 @@ import Select from '@mui/material/Select';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-const BasicSelect = ({category, setCategory,categoryID, setCategoryID, }) => {
- 
+const BasicSelect = ({category, setCategory,categoryID, setCategoryID }) => {
+  // useEffect(() => {
+  //   setCategory(null);
+  //   setCategoryID(null);
+  // }, [])
+  
 
   const[categories , setCategories] = useState([]);
   const navigate = useNavigate();

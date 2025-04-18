@@ -1,5 +1,5 @@
 from django.urls import path, include
-from .views import chatAssistantView, getThreadMessageView, deleteThreadView  # Ensure this is the correct import for your view class
+from .views import chatAssistantView, getThreadMessageView, deleteThreadView, CreateBudgetView, GetAllUserBudgetsView, GetUsernameView  # Ensure this is the correct import for your view class
 from . import views
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
@@ -18,11 +18,14 @@ urlpatterns = [
     path("getMessages/", getThreadMessageView.as_view(), name="chat_get_messages"),
     path("deleteThread/", deleteThreadView.as_view(), name="chat_delete_thread"),
 
+    path('getUsername/', GetUsernameView.as_view(), name="get_username"),
     path('registerAccount/',views.registerAccount),
     path('loginAccount/',views.loginAccount),
     path('logoffAccount/',views.logoutAccount),
     path('getCategories/',views.getCategories),
     path('addTransaction/',views.addTransaction),
+    path('createBudget/', CreateBudgetView.as_view(), name='create_budget'),
+    path('getUserBudgets/', GetAllUserBudgetsView.as_view(), name='get_user_budgets'),
     # path('getAccountID',views.getAccountID),
     path('getUserTransactions/',views.getUserTransactions),
     path('resetAccessToken/', views.resetAccessToken),

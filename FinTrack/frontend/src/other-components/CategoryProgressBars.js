@@ -1,26 +1,54 @@
-import React from 'react';
-import { Box, Typography, LinearProgress, Paper } from '@mui/material';
+import React, { useMemo, useEffect }from 'react';
+import { Box, Typography, LinearProgress} from '@mui/material';
 
-const categories = [
-  { name: 'Groceries', value: 320, goal: 500 },
-  { name: 'Utilities', value: 180, goal: 150 },
-  { name: 'Entertainment', value: 220, goal: 300 },
-  { name: 'Transport', value: 180, goal: 200 },
-];
 
-const CategoryProgressBars = () => {
+// const categories = [
+//   { name: 'Groceries', value: 320, goal: 500 },
+//   { name: 'Utilities', value: 180, goal: 150 },
+//   { name: 'Entertainment', value: 220, goal: 300 },
+//   { name: 'Transport', value: 180, goal: 200 },
+// ];
+
+const CategoryProgressBars = ({transactions, budgets, getCategories}) => {
+
+  // const [categories, setCategories] = useState([]);
+
+  const { categories } = useMemo(() => {
+      const categoryMap = {};
+      const vendorMap = {};
+      const dateMap = {};
+      budgets.forEach(({ category_id, amount }) => {
+        let temp = typeof category_id === 'number' ? getCategories(category_id) : category_id;
+        categoryMap[temp] = 0;
+      });
+      transactions.forEach(({ category_id, transaction_name, amount, transaction_date }) => {
+        // category_id totals
+        let temp = typeof category_id === 'number' ? getCategories(category_id) : category_id;
+        categoryMap[temp] = categoryMap[temp] + amount;
+        // Vendor totals
+        vendorMap[transaction_name] = (vendorMap[transaction_name] || 0) + amount;
+        // transaction_date totals
+        const dateStr = new Date(transaction_date).toISOString().split('T')[0]; // Normalize transaction_date
+        dateMap[dateStr] = (dateMap[dateStr] || 0) + amount;
+      });
+      let categories = Object.entries(categoryMap).map(([name, value]) => ({ "categoryName": name, "value": value, "goal": budgets.find(b => (typeof b.category_id === 'number' ? getCategories(b.category_id) : b.category_id) === name)?.amount || 0 }));
+      categories = categories.filter(category => category.goal > 0); // Filter out categories with zero value
+      // budgets.forEach
+      return { categories };
+    }, [transactions, budgets]);
+
+
   return (
-    // <Paper elevation={3} sx={{ p: 3 }}>
     <Box sx={{width: "100%"}}>
       <Typography variant="h7" className="blue2" sx={{ mb: 2, fontWeight: 500 }}>
         Category Budgets
       </Typography>
-      {categories.map(({ name, value, goal }) => {
+      {categories.map(({ categoryName, value, goal }) => {
         const percent = Math.min((value / goal) * 100, 100);
         return (
-          <Box key={name} sx={{ mb: 3 }}>
+          <Box key={categoryName} sx={{ mb: 3 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-              <Typography variant="body1">{name}</Typography>
+              <Typography variant="body1">{categoryName}</Typography>
               <Typography variant="body2">${value} / ${goal}</Typography>
             </Box>
             <LinearProgress
@@ -34,7 +62,6 @@ const CategoryProgressBars = () => {
           </Box>
         );
       })}
-    {/* // </Paper> */}
     </Box>
   );
 };

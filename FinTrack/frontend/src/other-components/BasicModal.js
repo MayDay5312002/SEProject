@@ -77,7 +77,7 @@ export default function BasicModal({transactions, setTransactions}) {
   return (
     // <div style={{width: "100%"}}>
     <Box sx={{width: "100%"}}>
-      <Button onClick={handleOpen}>Add Transaction</Button>
+      <Button onClick={handleOpen} sx={{color: "white", backgroundColor: "primary.main", mt: 1}}>Add Transaction</Button>
       <Modal
         open={open}
         onClose={handleClose}

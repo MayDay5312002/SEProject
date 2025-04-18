@@ -649,6 +649,45 @@ class GetUsernameView(APIView):
         username = User.objects.filter(id=request.COOKIES.get("account_id")).first().username  
         response.data = {"username": username}
         return response
+    
+class DeleteTransactionView(APIView):
+    def post(self, request):
+        response = Response(status=200)
+        new_access_token = authenticate_user(request)
+        response.set_cookie(
+            'access_token',
+            new_access_token,
+            httponly=True,
+            secure=True,
+            max_age=timedelta(days=15), 
+            samesite='Strict'
+        )
+        body = request.data
+        print(body)
+        with connection.cursor() as cursor:
+            cursor.callproc("deleteTransaction", [body["transaction_name"], body["transaction_date"], float(body["amount"]), int(body["category_id"])])
+            cursor.fetchall()
+        response.data = {"message": "Transaction deleted successfully"}
+        return response
+    
+class DeleteBudgetView(APIView):
+    def post(self, request):
+        response = Response(status=200)
+        new_access_token = authenticate_user(request)
+        response.set_cookie(
+            'access_token',
+            new_access_token,
+            httponly=True,
+            secure=True,
+            max_age=timedelta(days=15), 
+            samesite='Strict'
+        )
+        body = request.data
+        with connection.cursor() as cursor:
+            cursor.callproc("deleteBudget", [body["amount"], body["category_id"]])
+            cursor.fetchall()
+        response.data = {"message": "Budget deleted successfully"}
+        return response
         
 
 

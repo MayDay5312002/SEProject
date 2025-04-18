@@ -157,6 +157,7 @@ function MainApp() {
     }
 
 
+    const getCategoriesID = (category_name) => {return categories.find(category => category.category_name === category_name)?.id;} //returns a number of a category id
     const getCategories = (category_id) => {return categories.find(category => category.id === category_id)?.category_name;} //returns a string of a category name
     // this is for search
     const filteredTransactionData = transactions.filter((row) =>
@@ -195,15 +196,13 @@ function MainApp() {
     };
 
 
-    const filteredBudgetData = budgets.filter((row) =>
-      // (row.transaction_name && row.transaction_name.toLowerCase().includes(searchTerm.toLowerCase())) || // Check for transaction_name
-      (getCategories(row.category_id) && getCategories(row.category_id).toLowerCase().includes(searchTerm.toLowerCase())) || // Check if category exists
-      // (row.transaction_date && row.transaction_date.includes(searchTerm)) || // Ensure row.date is a string
-      (row.amount && row.amount.toString().includes(searchTerm)) // Ensure row.amount is a number 
-    );
+    // const filteredBudgetData = budgets.filter((row) =>
+    //   (getCategories(row.category_id) && getCategories(row.category_id).toLowerCase().includes(searchTerm.toLowerCase())) || // Check if category exists
+    //   (row.amount && row.amount.toString().includes(searchTerm)) // Ensure row.amount is a number 
+    // );
 
 
-    const sortedBudgetData = [...filteredBudgetData].sort((a, b) => {
+    const sortedBudgetData = budgets.sort((a, b) => {
       if (!sortBudgetConfig.key) return 0;
     
       let bValue = b[sortBudgetConfig.key];
@@ -231,6 +230,56 @@ function MainApp() {
         direction: prev.key === key && prev.direction === "asc" ? "desc" : "asc",
       }));
     };
+
+    const deleteFirstMatchTransaction = (row) => {
+      // const id = (typeof row.category_id === "number" ? row.category_id : getCategoriesID(row.category_id));
+      const index = transactions.findIndex((index) => index.category_id === row.category_id && index.transaction_name === row.transaction_name && index.amount === row.amount && index.transaction_date === row.transaction_date);
+      if (index !== -1) {
+        const updatedUsers = [
+          ...transactions.slice(0, index),
+          ...transactions.slice(index + 1)
+        ];
+        // console.log("updatedUsers", updatedUsers);
+        setTransactions(updatedUsers);
+      }
+    }
+
+    const deleteFirstMatchBudget = (row) => {
+      // const id = (typeof row.category_id === "number" ? row.category_id : getCategoriesID(row.category_id));
+      const index = budgets.findIndex((index) => index.category_id === row.category_id && index.transaction_name === row.transaction_name && index.amount === row.amount && index.transaction_date === row.transaction_date);
+      if (index !== -1) {
+        const updatedUsers = [
+          ...budgets.slice(0, index),
+          ...budgets.slice(index + 1)
+        ];
+        // console.log("updatedUsers", updatedUsers);
+        setBudgets(updatedUsers);
+      }
+    }
+
+    const handleDeleteTransaction = async (row) => {
+      // console.log(row);
+      axios.post("http://127.0.0.1:8000/api/deleteTransaction/", {transaction_date: row.transaction_date, transaction_name: row.transaction_name, amount: row.amount, category_id: (typeof row.category_id === "number") ? row.category_id : getCategoriesID(row.category_id)})
+      .then((response) => {
+        deleteFirstMatchTransaction(row);
+        console.log("Transaction deleted successfully:", response.data);
+      })
+      .catch((error) => {
+        console.error("Error deleting transaction:", error);
+      });
+    };
+
+    const handleDeleteBudget = async (row) => {
+      console.log(row);
+      axios.post("http://127.0.0.1:8000/api/deleteBudget/", {amount: row.amount, category_id: (typeof row.category_id === "number") ? row.category_id : getCategoriesID(row.category_id)})
+      .then((response) => {
+        deleteFirstMatchBudget(row);
+        console.log("Transaction deleted successfully:", response.data);
+      })
+      .catch((error) => {
+        console.error("Error deleting transaction:", error);
+      });
+    };
     
     
 
@@ -246,7 +295,7 @@ function MainApp() {
         <Typography variant="body2" className="blue2" sx={{ fontWeight: "600" }}>${totalBudget}</Typography>
         {/* <LinearProgress variant="determinate" value={50} sx={{ height: 10, borderRadius: 5, my: 5 }} /> */}
         <Divider sx={{ my: 2 }} />
-        <CategoryProgressBars />
+        <CategoryProgressBars transactions={transactions} budgets={budgets} getCategories={getCategories}/>
         {/* <PieChart
           series={[
             {
@@ -263,12 +312,16 @@ function MainApp() {
         <ChartDashboard transactions={transactions} categories={categories} getCategories={getCategories}/>
 
         <div style={{paddingBottom: "5em"}}>
+
+          
             <Box
               display="flex"
               flexDirection={{ xs: "column", sm: "column", md: "row" }} // xs & sm = column, md+ = row
               gap={"2em"} // adds spacing between items
               // sx={{pd: "20em"}}
             >
+
+              {/* This is the transactions table */}
             <Paper sx={{ padding: "2em", borderRadius: "3em"}}>
                 <Typography variant="h5" gutterBottom className="blue2" sx={{fontWeight: "500"}}>Transactions</Typography>
                 <TextField
@@ -296,6 +349,7 @@ function MainApp() {
                         <TableCell onClick={() => handleTransactionSort("category_id")} style={{ cursor: "pointer" }}>
                           <strong>Category {sortTransConfig.key === "category_id" ? (sortTransConfig.direction === "asc" ? "⬆️" : "⬇️") : ""}</strong>
                         </TableCell>
+                        <TableCell>Action</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
@@ -305,6 +359,13 @@ function MainApp() {
                           <TableCell>{row.transaction_name}</TableCell>
                           <TableCell align="right">{row.amount.toFixed(2)}</TableCell>
                           <TableCell>{typeof row.category_id === "string" ? row.category_id : getCategories(row.category_id)}</TableCell>
+                          <TableCell>
+                            <IconButton onClick={() => handleDeleteTransaction(row)} aria-label="delete">
+                              <DeleteIcon color="error" />
+                            </IconButton>
+                          </TableCell>
+
+
                         </TableRow>
                       ))}
                       {filteredTransactionData.length === 0 && (
@@ -319,48 +380,47 @@ function MainApp() {
                 </TableContainer>
               </Paper>
 
-
+              {/* This is for the budget */}
               <Paper sx={{ padding: "2em", borderRadius: "3em"}}>
                 <Typography variant="h5" gutterBottom className="blue2" sx={{fontWeight: "500"}}>Budgets</Typography>
-                <TextField
+                {/* <TextField
                   label="Search"
                   variant="outlined"
                   fullWidth
                   margin="normal"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                />
+                /> */}
                 <BasicModalBudget budgets={budgets} setBudgets={setBudgets} getCategory={getCategories}/>
                 <TableContainer>
                   <Table aria-label="expenses table">
                     <TableHead>
                       <TableRow>
-                        {/* <TableCell onClick={() => handleTransactionSort("transaction_date")} style={{ cursor: "pointer" }}>
-                          <strong>Date {sortTransConfig.key === "transaction_date" ? (sortTransConfig.direction === "asc" ? "⬆️" : "⬇️") : ""}</strong>
-                        </TableCell>
-                        <TableCell onClick={() => handleTransactionSort("transaction_name")} style={{ cursor: "pointer" }}>
-                          <strong>Vendor Name {sortTransConfig.key === "transaction_name" ? (sortTransConfig.direction === "asc" ? "⬆️" : "⬇️") : ""}</strong>
-                        </TableCell> */}
                         <TableCell onClick={() => handleBudgetSort("amount")} style={{ cursor: "pointer" }} align="right">
                           <strong>Amount ($) {sortBudgetConfig.key === "amount" ? (sortBudgetConfig.direction === "asc" ? "⬆️" : "⬇️") : ""}</strong>
                         </TableCell>
                         <TableCell onClick={() => handleBudgetSort("category_id")} style={{ cursor: "pointer" }}>
                           <strong>Category {sortBudgetConfig.key === "category_id" ? (sortBudgetConfig.direction === "asc" ? "⬆️" : "⬇️") : ""}</strong>
                         </TableCell>
+                        <TableCell>Action</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
                       {sortedBudgetData.map((row, index) => (
                         <TableRow key={index}>
-                          {/* <TableCell>{row.transaction_date}</TableCell>
-                          <TableCell>{row.transaction_name}</TableCell> */}
                           <TableCell align="right">{row.amount.toFixed(2)}</TableCell>
                           <TableCell>{typeof row.category_id === "string" ? row.category_id : getCategories(row.category_id)}</TableCell>
+                          <TableCell>
+                          <IconButton onClick={() => handleDeleteBudget(row)} aria-label="delete">
+                              <DeleteIcon color="error" />
+                            </IconButton>
+                          </TableCell>
+
                         </TableRow>
                       ))}
-                      {filteredTransactionData.length === 0 && (
+                      {budgets.length === 0 && (
                         <TableRow>
-                          <TableCell colSpan={4} align="center">
+                          <TableCell colSpan={5} align="center">
                             No results found.
                           </TableCell>
                         </TableRow>

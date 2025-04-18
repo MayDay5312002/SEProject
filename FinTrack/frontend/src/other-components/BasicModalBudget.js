@@ -85,7 +85,7 @@ export default function BasicModalBudget({budgets, setBudgets, getCategory}) {
 
   return (
     <div style={{width: "100%"}}>
-      <Button onClick={handleOpen}>Add Budget</Button>
+      <Button onClick={handleOpen} sx={{color: "white", backgroundColor: "primary.main", mt: 1}}>Add Budget</Button>
       <Modal
         open={open}
         onClose={handleClose}

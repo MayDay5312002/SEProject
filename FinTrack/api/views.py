@@ -7,6 +7,9 @@ from rest_framework.views import APIView
 from unidecode import unidecode
 from .assistant_tools import get_news_today, get_userData_analysis
 
+from django.core.files.storage import default_storage
+from django.core.files.base import ContentFile
+
 from rest_framework.decorators import api_view, permission_classes #funciton based view used this with all views
 from rest_framework.permissions import IsAuthenticated 
 # from base.models import Categories ,Transactions  # <-- import table from base(database information)
@@ -19,7 +22,10 @@ from datetime import timedelta
 from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
 from rest_framework.status import HTTP_201_CREATED, HTTP_400_BAD_REQUEST
 from django.db import connection
+from .sendimagetoAPI import extract_text_from_image
 # from pprint import pprint
+
+
 
 
 
@@ -29,7 +35,7 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 client = openai.OpenAI()
 
 assistant = os.getenv("AI_ASSISTANT_KEY")
-
+claude = os.getenv("anthropic_api")
 
 
 def markdown_to_text(md):
@@ -46,33 +52,21 @@ class chatAssistantView(APIView):
         user_message = request.data.get("message", "")
         accountID = request.COOKIES.get("account_id")
         thread = request.COOKIES.get("thread_id", None)
+        file = request.FILES.get("file")
+        if file: 
+            print("File received")
+            print(file.name)
+            file_path = os.path.join("uploads", file.name)  # or any subfolder in MEDIA_ROOT
+            saved_path = default_storage.save(file_path, ContentFile(file.read()))
+            print("File saved at:", saved_path)
+            textImage = "This is the extracted and processed file:\n"+extract_text_from_image(claude, saved_path, "claude-3-7-sonnet-20250219")
+            print(textImage)
+        
         if thread is None:
             thread = client.beta.threads.create().id
         thread = client.beta.threads.retrieve(thread_id=thread)
-        # url1 = f"https://api.openai.com/v1/threads/{thread.id}/messages"
-        # url2 = f"https://api.openai.com/v1/threads/{thread.id}/runs"
 
-        # headersNew = {
-        #         "Content-Type": "application/json",
-        #         "Authorization": f"Bearer {os.getenv('OPENAI_API_KEY')}",
-        #         "OpenAI-Beta": "assistants=v2"
-        #     }
-        # bodyNew1 = {
-        #             "role": "user",
-        #             "content": user_message
-        #         }
-        # bodyNew2 = {
-        #             "assistant_id" : f"{assistant}",
-        #             "stream" : True
-        #         }
-        # run = client.beta.runs.create()
-        # response1 = requests.post(url1, headers=headersNew, json=bodyNew1)#create a new message
-        # #print(response1.content)
-        # response2 = requests.post(url2, headers=headersNew, json=bodyNew2)#create a new run
-        # #print(response2.content)
-        # response3 = requests.get(url1, headers=headersNew)#Looks at message
-
-        message = client.beta.threads.messages.create(thread_id=thread.id, role="user", content=user_message)
+        message = client.beta.threads.messages.create(thread_id=thread.id, role="user", content= (textImage+"::++\n\n"+user_message) if file else user_message)
         run = client.beta.threads.runs.create_and_poll(thread_id=thread.id, assistant_id=assistant)
         messages = client.beta.threads.messages.list(thread_id = thread.id)
         # print(response3.content)
@@ -216,10 +210,12 @@ class getThreadMessageView(APIView):
         if response1.status_code == 200:
             dictionary = [ele["content"][0]["text"]["value"] for ele in response1.json()["data"]]
             dictionary = [markdown_to_text(unidecode(ele)) for ele in dictionary[-1::-1]]
+            dictionary = [ele.split("::++")[1].strip() if "::++" in ele else ele for ele in dictionary]
             # for ele in dictionary:
             #     print(ele)
             #     print()
             # pprint(dictionary)
+            
             response = Response({"response": dictionary}, status=200)
             return response
         else:
@@ -309,18 +305,18 @@ def loginAccount(request):
                 max_age=timedelta(days=15),
                 samesite='Strict'
             )
-            response.set_cookie(
-                'account_id',
-                serializer.data['id'],
-                httponly=True,
-                secure=True,
-                max_age=timedelta(days=15),
-                samesite='Strict'
-            )
+            # response.set_cookie(
+            #     'account_id',
+            #     serializer.data['id'],
+            #     httponly=True,
+            #     secure=True,
+            #     max_age=timedelta(days=15),
+            #     samesite='Strict'
+            # )
 
             response.set_cookie(
                 'account_id_hashed',
-                hash_account_id(serializer.data['id']),
+                str(serializer.data['id'])+hash_account_id(serializer.data['id']),
                 httponly=True,
                 secure=True,
                 max_age=timedelta(days=15),
@@ -375,7 +371,7 @@ def logoutAccount(request):
     #remove refresh token
     response = Response({'success': 'Log out successful'}, status=200)
     response.delete_cookie('refresh_token')
-    response.delete_cookie('account_id')
+    # response.delete_cookie('account_id')
     response.delete_cookie('access_token')
     response.delete_cookie('account_id_hashed')
     return response
@@ -384,8 +380,10 @@ class AuthenticateView(APIView):
     def get(self, request):
         access_token = request.COOKIES.get("access_token")
         refresh_token = request.COOKIES.get("refresh_token")
-        account_id = request.COOKIES.get("account_id")
+        # account_id = request.COOKIES.get("account_id")
         account_id_hashed = request.COOKIES.get("account_id_hashed")
+        account_id = int(account_id_hashed[0])
+        account_id_hashed = account_id_hashed[1:]
         if not check_hashed_account_id(account_id, account_id_hashed):
             raise Response({"error": "Invalid account id"}, status=401)
         print("access token", access_token)
@@ -441,7 +439,7 @@ def addTransaction(request):
         max_age=timedelta(days=15), 
         samesite='Strict'
     )
-    accountID = request.COOKIES.get("account_id")
+    accountID = int(request.COOKIES.get("account_id_hashed")[0]) 
     # Make a copy of request.data because it's immutable
     category = request.data.get('category')
     amount = float(request.data.get('amount'))
@@ -579,7 +577,7 @@ def getUserTransactions(request):
         max_age=timedelta(days=15), 
         samesite='Strict'
     )
-    accountID = request.COOKIES.get("account_id") #account id cookie
+    accountID = int(request.COOKIES.get("account_id_hashed")[0]) #account id cookie
 
     with connection.cursor() as cursor:
         cursor.callproc("getAllTransaction", [accountID])
@@ -592,7 +590,7 @@ def getUserTransactions(request):
 
 class CreateBudgetView(APIView):
     def post(self, request):
-        account_id = request.COOKIES.get("account_id")
+        account_id = int(request.COOKIES.get("account_id_hashed")[0])
         response = Response(status=200)
         new_access_token = authenticate_user(request)
         response.set_cookie(
@@ -624,7 +622,7 @@ class GetAllUserBudgetsView(APIView):
             max_age=timedelta(days=15), 
             samesite='Strict'
         )
-        account_id = request.COOKIES.get("account_id")
+        account_id = int(request.COOKIES.get("account_id_hashed")[0])
         with connection.cursor() as cursor:
             cursor.callproc("getAllBudget", [account_id])
             headers = [col[0] for col in cursor.description]
@@ -646,7 +644,10 @@ class GetUsernameView(APIView):
             max_age=timedelta(days=15), 
             samesite='Strict'
         )
-        username = User.objects.filter(id=request.COOKIES.get("account_id")).first().username  
+        username = User.objects.filter(id=int(request.COOKIES.get("account_id_hashed")[0]))
+        username = username.first().username if username.exists() else None
+        if username is None:
+            return Response({"error": "User not found"}, status=404)
         response.data = {"username": username}
         return response
     
@@ -654,6 +655,7 @@ class DeleteTransactionView(APIView):
     def post(self, request):
         response = Response(status=200)
         new_access_token = authenticate_user(request)
+        account_id = int(request.COOKIES.get("account_id_hashed")[0])
         response.set_cookie(
             'access_token',
             new_access_token,
@@ -665,7 +667,7 @@ class DeleteTransactionView(APIView):
         body = request.data
         print(body)
         with connection.cursor() as cursor:
-            cursor.callproc("deleteTransaction", [body["transaction_name"], body["transaction_date"], float(body["amount"]), int(body["category_id"])])
+            cursor.callproc("deleteTransaction", [body["transaction_name"], body["transaction_date"], float(body["amount"]), int(body["category_id"]), account_id])
             cursor.fetchall()
         response.data = {"message": "Transaction deleted successfully"}
         return response
@@ -674,6 +676,7 @@ class DeleteBudgetView(APIView):
     def post(self, request):
         response = Response(status=200)
         new_access_token = authenticate_user(request)
+        account_id = int(request.COOKIES.get("account_id_hashed")[0])
         response.set_cookie(
             'access_token',
             new_access_token,
@@ -684,7 +687,7 @@ class DeleteBudgetView(APIView):
         )
         body = request.data
         with connection.cursor() as cursor:
-            cursor.callproc("deleteBudget", [body["amount"], body["category_id"]])
+            cursor.callproc("deleteBudget", [body["amount"], body["category_id"], account_id])
             cursor.fetchall()
         response.data = {"message": "Budget deleted successfully"}
         return response
@@ -694,8 +697,11 @@ class DeleteBudgetView(APIView):
 def authenticate_user(request):
     access_token = request.COOKIES.get("access_token")
     refresh_token = request.COOKIES.get("refresh_token")
-    account_id = request.COOKIES.get("account_id")
+    # account_id = request.COOKIES.get("account_id")
     account_id_hashed = request.COOKIES.get("account_id_hashed")
+    account_id = int(account_id_hashed[0])
+    print(account_id)
+    account_id_hashed = account_id_hashed[1:]
     if not check_hashed_account_id(account_id, account_id_hashed):
         raise Exception("Invalid account id")
     

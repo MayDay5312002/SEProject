@@ -1,6 +1,6 @@
 import React from "react";
 import { Container, Typography, Avatar, Box, TextField, Button, IconButton, Collapse, CircularProgress,
-Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Divider
+Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Divider, Pagination
 } from "@mui/material";
 
 // import { createTheme, ThemeProvider } from '@mui/material/styles';
@@ -11,6 +11,7 @@ import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import DeleteIcon from '@mui/icons-material/Delete';
 import BasicModal from "../other-components/BasicModal";
 import ChartDashboard from "../other-components/ChartDashboard";
+import AttachFileIcon from '@mui/icons-material/AttachFile';
 import CategoryProgressBars from "../other-components/CategoryProgressBars";
 import BasicModalBudget from "../other-components/BasicModalBudget";
 const months = {
@@ -41,32 +42,90 @@ function MainApp() {
     const [sortBudgetConfig, setSortBudgetConfig] = useState({ key: null, direction: "asc" });
     const [totalBudget, setTotalBudget] = useState(0);
     const [username, setUsername] = useState("");
+    const [currentPage, setCurrentPage] = useState(1);
+    const [selectedFile, setSelectedFile] = useState(null);
+    const itemsPerPage = 10;
     const bottomRef = useRef(null);
 
     const navigate = useNavigate();
   
+    // const handleSendMessage = async () => {
+    //   if (!message.trim()) return;
+    
+    //   const newChat = [...chat, { type: "user", content: message }];
+    //   setChat(newChat);
+    //   setMessage("");//clear the message
+    
+    //   const updatedChat = [...newChat, { type: "ai", content: <CircularProgress size="1.7em" color="white"/> }];
+    //   setChat(updatedChat);
+    
+    //   try {
+    //     const response = await axios.post("http://127.0.0.1:8000/api/chat/", { message });
+    
+    //     setChat([...updatedChat.slice(0, -1), { type: "ai", content: response.data.response }]);
+    //   } catch (error) {
+    //     console.error("Error communicating with AI:", error);
+    //   }
+    // };  
+
     const handleSendMessage = async () => {
+      // Don't send if message is empty
       if (!message.trim()) return;
     
+      // Add the message to the chat
       const newChat = [...chat, { type: "user", content: message }];
       setChat(newChat);
-      setMessage("");//clear the message
+      setMessage(""); // Clear the message input field
     
-      const updatedChat = [...newChat, { type: "ai", content: <CircularProgress size="1.7em" color="white"/> }];
+      // Add a loading indicator for the AI response
+      const updatedChat = [
+        ...newChat,
+        { type: "ai", content: <CircularProgress size="1.7em" color="white" /> },
+      ];
       setChat(updatedChat);
     
-      try {
-        const response = await axios.post("http://127.0.0.1:8000/api/chat/", { message });
+      // Prepare the FormData object
+      const formData = new FormData();
+      formData.append("message", message); // Always add message to FormData
     
-        setChat([...updatedChat.slice(0, -1), { type: "ai", content: response.data.response }]);
+      // If a file is selected, append it to FormData
+      if (selectedFile) {
+        formData.append("file", selectedFile);
+      }
+    
+      try {
+        // Send the message and file (if any) to the backend
+        const response = await axios.post("http://127.0.0.1:8000/api/chat/", formData, {
+          headers: {
+            "Content-Type": "multipart/form-data", // Important for sending files
+          },
+        });
+    
+        // Replace the loading indicator with the AI response
+        setChat([
+          ...updatedChat.slice(0, -1),
+          { type: "ai", content: response.data.response },
+        ]);
+        setSelectedFile(null); // Clear the selected file after sending
       } catch (error) {
         console.error("Error communicating with AI:", error);
       }
-    };  
+    };
+
+    const handleFileChange = (event) => {
+      setSelectedFile(event.target.files[0]); // Store the selected file
+    };
+    
+    
 
     useEffect(() => {
       bottomRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [chat]);
+
+    
+    useEffect(()=>{
+      console.log("Selected file changed:", selectedFile);
+    }, [selectedFile])
     
     useEffect(()=> {
       axios.get("http://127.0.0.1:8000/api/getMessages/")
@@ -187,6 +246,15 @@ function MainApp() {
       if (aValue > bValue) return sortTransConfig.direction === "asc" ? 1 : -1;
       return 0;
     });
+
+    const paginatedTransactionData = sortedFinancialData.slice(
+      (currentPage - 1) * itemsPerPage,
+      currentPage * itemsPerPage
+    );
+
+    useEffect(() => {
+      setCurrentPage(1);
+    }, [sortTransConfig]);
 
     const handleTransactionSort = (key) => {
       setSortTransConfig((prev) => ({
@@ -353,7 +421,7 @@ function MainApp() {
                       </TableRow>
                     </TableHead>
                     <TableBody>
-                      {sortedFinancialData.map((row, index) => (
+                      {paginatedTransactionData.map((row, index) => (
                         <TableRow key={index}>
                           <TableCell>{row.transaction_date}</TableCell>
                           <TableCell>{row.transaction_name}</TableCell>
@@ -377,20 +445,24 @@ function MainApp() {
                       )}
                     </TableBody>
                   </Table>
+                  <Box display="flex" flexDirection="row" justifyContent="center" mt={2}>
+                    <Pagination
+                      // sx={{display: "flex", flexDirection: "row"}}
+                      count={Math.ceil(sortedFinancialData.length / itemsPerPage)}
+                      page={currentPage}
+                      onChange={(event, value) => setCurrentPage(value)}
+                      color="primary"
+                      shape="rounded"
+                    />
+                  </Box>
                 </TableContainer>
               </Paper>
 
               {/* This is for the budget */}
               <Paper sx={{ padding: "2em", borderRadius: "3em"}}>
                 <Typography variant="h5" gutterBottom className="blue2" sx={{fontWeight: "500"}}>Budgets</Typography>
-                {/* <TextField
-                  label="Search"
-                  variant="outlined"
-                  fullWidth
-                  margin="normal"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                /> */}
+                {/* <Typography variant="h6" gutterBottom className="blue2" sx={{fontWeight: "500"}}>Total Budget: ${totalBudget}</Typography> */}
+                <Typography variant="caption" gutterBottom sx={{fontStyle: "italic", color: 'rgba(0, 0, 0, 0.30)'}}>Budget is applied for the month</Typography>
                 <BasicModalBudget budgets={budgets} setBudgets={setBudgets} getCategory={getCategories}/>
                 <TableContainer>
                   <Table aria-label="expenses table">
@@ -431,6 +503,8 @@ function MainApp() {
               </Paper>
             </Box>
         </div>
+
+        {/* This is the the chatbot */}
         <div style={{backgroundColor: "#90e0ef", zIndex:1000}}>
         <Box
           sx={{
@@ -519,6 +593,7 @@ function MainApp() {
               </Box>
   
               {/* Input Field & Send Button */}
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" , mb: 1}}>
               <TextField
                 fullWidth
                 variant="outlined"
@@ -533,9 +608,27 @@ function MainApp() {
                 }}
                 sx={{ mb: 2}}
               />
+              <div style={{ display: "inline-block", position: "relative" }}>
+                <input
+                  type="file"
+                  onChange={handleFileChange}
+                  style={{ display: "none" }}
+                  id="file-input"
+                />
+                <label htmlFor="file-input">
+                  <IconButton component="span" sx={{ color: "primary.main", mx: 1 }}>
+                    <AttachFileIcon />
+                  </IconButton>
+                </label>
+                <IconButton onClick={() => setSelectedFile(null)} sx={{ color: "primary.main" , fontSize: "0.8em", position: "absolute", top: "-2.2em", left: "0.5em"}}  >
+                  {(selectedFile) ?  (selectedFile.name.substring(0, 2)+".. x") : ""}
+                </IconButton>
+              </div>
+              </div>
               <Button variant="contained" fullWidth onClick={handleSendMessage}>
                 Send
               </Button>
+              
             </Box>
           </Collapse>
         </Box>

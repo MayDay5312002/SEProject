@@ -17,7 +17,7 @@ const CategoryProgressBars = ({transactions, budgets, getCategories}) => {
       const categoryMap = {};
       const vendorMap = {};
       const dateMap = {};
-      budgets.forEach(({ category_id, amount }) => {
+      budgets.forEach(({ category_id }) => {
         let temp = typeof category_id === 'number' ? getCategories(category_id) : category_id;
         categoryMap[temp] = 0;
       });

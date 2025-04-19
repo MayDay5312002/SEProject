@@ -125,7 +125,7 @@ const ChartDashboard = ({transactions, categories, getCategories}) => {
     
 
 
-    console.log(categories);
+    // console.log(categories);
   return (
     <Paper elevation={4} sx={{ p: 3, m: 2 , borderRadius: 2}}>
       <Typography variant="h5" sx={{ mb: 2 , color: COLORS[0]}}>

@@ -50,7 +50,7 @@ class chatAssistantView(APIView):
     def post(self, request):
         authenticate_user(request)
         user_message = request.data.get("message", "")
-        accountID = request.COOKIES.get("account_id")
+        accountID = int(request.COOKIES.get("account_id_hashed")[0])
         thread = request.COOKIES.get("thread_id", None)
         file = request.FILES.get("file")
         if file: 
@@ -60,7 +60,9 @@ class chatAssistantView(APIView):
             saved_path = default_storage.save(file_path, ContentFile(file.read()))
             print("File saved at:", saved_path)
             textImage = "This is the extracted and processed file:\n"+extract_text_from_image(claude, saved_path, "claude-3-7-sonnet-20250219")
-            print(textImage)
+            default_storage.delete(saved_path)
+            # print(textImage)
+            
         
         if thread is None:
             thread = client.beta.threads.create().id
@@ -97,30 +99,18 @@ class chatAssistantView(APIView):
                         "output": tool_response
                         }
                     )
-                    try:
-                        run = client.beta.threads.runs.submit_tool_outputs_and_poll(
-                            thread_id=thread.id,
-                            run_id=run.id,
-                            tool_outputs=tool_outputs
-                        )
-                    except Exception as e:
-                        print(e)
-                        print("Error - in exception")
-                        return Response({"error": "Error"}, status=500)
+                    # try:
+                    #     run = client.beta.threads.runs.submit_tool_outputs_and_poll(
+                    #         thread_id=thread.id,
+                    #         run_id=run.id,
+                    #         tool_outputs=tool_outputs
+                    #     )
+                    # except Exception as e:
+                    #     print(e)
+                    #     print("Error - in exception")
+                    #     return Response({"error": "Error"}, status=500)
                 if tool.function.name == "get_userData_analysis":
                     print("get_userData_analysis")
-                    # sample_purchases = [
-                    #     {"date": "2025-04-01", "amount": 120.50, "category": "Groceries", "vendor": "Whole Foods"},
-                    #     {"date": "2025-04-02", "amount": 45.00, "category": "Dining", "vendor": "Local Restaurant"},
-                    #     {"date": "2025-04-03", "amount": 65.99, "category": "Entertainment", "vendor": "Movie Theater"},
-                    #     {"date": "2025-04-05", "amount": 200.00, "category": "Utilities", "vendor": "Electric Company"},
-                    #     {"date": "2025-04-07", "amount": 35.45, "category": "Groceries", "vendor": "Trader Joe's"},
-                    #     {"date": "2025-04-10", "amount": 89.99, "category": "Shopping", "vendor": "Target"},
-                    #     {"date": "2025-04-12", "amount": 55.00, "category": "Transportation", "vendor": "Gas Station"},
-                    #     {"date": "2025-04-15", "amount": 12.99, "category": "Subscriptions", "vendor": "Streaming Service"},
-                    #     {"date": "2025-04-18", "amount": 78.50, "category": "Dining", "vendor": "Fancy Restaurant"},
-                    #     {"date": "2025-04-20", "amount": 120.00, "category": "Shopping", "vendor": "Department Store"},
-                    # ]
                     with connection.cursor() as cursor:
                         cursor.callproc("getAllCategories", [])
                         # headers = [col[0] for col in cursor.description]
@@ -143,16 +133,45 @@ class chatAssistantView(APIView):
                         "output": tool_response
                         }
                     )
-                    try:
-                        run = client.beta.threads.runs.submit_tool_outputs_and_poll(
-                            thread_id=thread.id,
-                            run_id=run.id,
-                            tool_outputs=tool_outputs
-                        )
-                    except Exception as e:
-                        print(e)
-                        print("Error - in exception")
-                        return Response({"error": "Error"}, status=500)
+                    # try:
+                    #     run = client.beta.threads.runs.submit_tool_outputs_and_poll(
+                    #         thread_id=thread.id,
+                    #         run_id=run.id,
+                    #         tool_outputs=tool_outputs
+                    #     )
+                    # except Exception as e:
+                    #     print(e)
+                    #     print("Error - in exception")
+                    #     return Response({"error": "Error"}, status=500)
+                if tool.function.name == "add_transaction":
+                    print("add_transaction")
+                    function_args = json.loads(tool.function.arguments)
+                    # print(type(function_args))
+                    # print("function_args", function_args)
+                    with connection.cursor() as cursor:
+                        # "createTransaction", [date, vendor_name, amount, category, accountID]
+                        cursor.callproc("createTransaction", [function_args["transaction_date"], function_args["transaction_name"], float(function_args["amount"]), function_args["category_id"], accountID])
+                        cursor.fetchall()
+                        while cursor.nextset():
+                            pass
+                    tool_response = "Transaction added successfully: " + str(function_args)
+                    tool_outputs.append(
+                        {
+                        "tool_call_id": tool.id,
+                        "output": tool_response
+                        }
+                    )
+            try:
+                run = client.beta.threads.runs.submit_tool_outputs_and_poll(
+                    thread_id=thread.id,
+                    run_id=run.id,
+                    tool_outputs=tool_outputs
+                )
+            except Exception as e:
+                print(e)
+                print("Error - in exception")
+                return Response({"error": "Error"}, status=500)
+                    
             # while(run.status == "queued" or run.status == "in_progress" or run.status == "requires_action"):
             #     pass
             if run.status == "completed":

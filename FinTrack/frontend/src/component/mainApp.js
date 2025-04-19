@@ -100,6 +100,18 @@ function MainApp() {
             "Content-Type": "multipart/form-data", // Important for sending files
           },
         });
+
+        axios.get("http://127.0.0.1:8000/api/getUserTransactions/")
+        .then((response) => {
+          // console.log(response.data["transactions"]);
+          setTransactions(response.data["transactions"]);
+          // console.log(transactions);
+        })
+        .catch((error) => {
+          console.error("Error fetching transactions:", error);
+          localStorage.setItem("isAuthenticated", "false");
+          navigate("/"); 
+        });
     
         // Replace the loading indicator with the AI response
         setChat([
@@ -113,7 +125,13 @@ function MainApp() {
     };
 
     const handleFileChange = (event) => {
-      setSelectedFile(event.target.files[0]); // Store the selected file
+      const file = event.target.files[0];
+      if (file) {
+        setSelectedFile(file);
+      }
+    
+      // Reset the input value so selecting the same file again triggers onChange
+      event.target.value = null;
     };
     
     
@@ -124,7 +142,7 @@ function MainApp() {
 
     
     useEffect(()=>{
-      console.log("Selected file changed:", selectedFile);
+      // console.log("Selected file changed:", selectedFile);
     }, [selectedFile])
     
     useEffect(()=> {
@@ -193,7 +211,7 @@ function MainApp() {
 
     useEffect(() => {
       let total = 0;
-      console.log("Yerr");
+      // console.log("Yerr");
       budgets.forEach((budget) => {
         total += budget.amount;
       });
@@ -330,7 +348,7 @@ function MainApp() {
       axios.post("http://127.0.0.1:8000/api/deleteTransaction/", {transaction_date: row.transaction_date, transaction_name: row.transaction_name, amount: row.amount, category_id: (typeof row.category_id === "number") ? row.category_id : getCategoriesID(row.category_id)})
       .then((response) => {
         deleteFirstMatchTransaction(row);
-        console.log("Transaction deleted successfully:", response.data);
+        // console.log("Transaction deleted successfully:", response.data);
       })
       .catch((error) => {
         console.error("Error deleting transaction:", error);
@@ -338,11 +356,11 @@ function MainApp() {
     };
 
     const handleDeleteBudget = async (row) => {
-      console.log(row);
+      // console.log(row);
       axios.post("http://127.0.0.1:8000/api/deleteBudget/", {amount: row.amount, category_id: (typeof row.category_id === "number") ? row.category_id : getCategoriesID(row.category_id)})
       .then((response) => {
         deleteFirstMatchBudget(row);
-        console.log("Transaction deleted successfully:", response.data);
+        // console.log("Transaction deleted successfully:", response.data);
       })
       .catch((error) => {
         console.error("Error deleting transaction:", error);
@@ -409,7 +427,7 @@ function MainApp() {
                           <strong>Date {sortTransConfig.key === "transaction_date" ? (sortTransConfig.direction === "asc" ? "⬆️" : "⬇️") : ""}</strong>
                         </TableCell>
                         <TableCell onClick={() => handleTransactionSort("transaction_name")} style={{ cursor: "pointer" }}>
-                          <strong>Vendor Name {sortTransConfig.key === "transaction_name" ? (sortTransConfig.direction === "asc" ? "⬆️" : "⬇️") : ""}</strong>
+                          <strong>Transaction Name {sortTransConfig.key === "transaction_name" ? (sortTransConfig.direction === "asc" ? "⬆️" : "⬇️") : ""}</strong>
                         </TableCell>
                         <TableCell onClick={() => handleTransactionSort("amount")} style={{ cursor: "pointer" }} align="right">
                           <strong>Amount ($) {sortTransConfig.key === "amount" ? (sortTransConfig.direction === "asc" ? "⬆️" : "⬇️") : ""}</strong>

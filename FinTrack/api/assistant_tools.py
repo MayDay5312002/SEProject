@@ -53,3 +53,6 @@ def get_userData_analysis(sample_purchases: List[Dict]) -> str:
     return current_month_analysis + ytd_analysis
 
 
+
+
+

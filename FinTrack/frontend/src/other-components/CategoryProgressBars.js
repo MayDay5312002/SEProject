@@ -49,7 +49,7 @@ const CategoryProgressBars = ({transactions, budgets, getCategories}) => {
           <Box key={categoryName} sx={{ mb: 3 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
               <Typography variant="body1">{categoryName}</Typography>
-              <Typography variant="body2">${value} / ${goal}</Typography>
+              <Typography variant="body2">${value.toFixed(2)} / ${goal.toFixed(2)}</Typography>
             </Box>
             <LinearProgress
               variant="determinate"

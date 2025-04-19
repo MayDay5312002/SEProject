@@ -37,7 +37,7 @@ CSRF_TRUSTED_ORIGINS = ["http://127.0.0.1", "http://localhost"]
 #FOR NOW
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True  # Allow CSRF cookies over HTTP
-CRSF_COOKIE_SAMESITE = 'Lax'  # Allow CSRF cookies to be sent with cross-site requests
+CSRF_COOKIE_SAMESITE = 'Strict'
 CORS_ALLOW_ALL_ORIGINS = True ### FOR NOW
 
 # CSRF_COOKIE_HTTPONLY = False
@@ -52,9 +52,12 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',
+    'rest_framework_simplejwt',
     'FinTrack',
     'api',
-    'frontend'
+    'frontend',
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
@@ -65,6 +68,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
 ]
 
 ROOT_URLCONF = 'FinTrack.urls'
@@ -154,9 +158,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
-    "SIGNING_KEY": "TDXVMWwH1sJHO_pcNLQU0oMmZ7oNvuSjk-wSk_ieLkimNXm9jSKQqRsLtmxsZOyFr_c6qrW-Ce5qJMd0dJQc-A",
+    "SIGNING_KEY": "TDXVMWwH1sJHO_pcNLQU0oMmZ7oNvuSjk-wSk_ieLkimNXm9jSKQqRsLtmxsZOyFr_c6qrW-Ce5qJMd0dJWc-A",
     # "TOKEN_OBTAIN_SERIALIZER": "linkedInProj.serializers.CustomTokenObtainPairSerializer",
     "AUTH_COOKIE_SECURE": True,  
     # "ROTATE_REFRESH_TOKENS": True,
-    
 }

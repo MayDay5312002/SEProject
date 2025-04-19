@@ -17,11 +17,21 @@ const CategoryProgressBars = ({transactions, budgets, getCategories}) => {
       const categoryMap = {};
       const vendorMap = {};
       const dateMap = {};
+
+      const now = new Date();
+      const currentYear = now.getFullYear();
+      const currentMonth = now.getMonth(); // 0-indexed, January = 0
+
+      const filteredTransactions = transactions.filter(({ transaction_date }) => {
+        const date = new Date(transaction_date);
+        return date.getFullYear() === currentYear && date.getMonth() === currentMonth;
+      });
+
       budgets.forEach(({ category_id }) => {
         let temp = typeof category_id === 'number' ? getCategories(category_id) : category_id;
         categoryMap[temp] = 0;
       });
-      transactions.forEach(({ category_id, transaction_name, amount, transaction_date }) => {
+      filteredTransactions.forEach(({ category_id, transaction_name, amount, transaction_date }) => {
         // category_id totals
         let temp = typeof category_id === 'number' ? getCategories(category_id) : category_id;
         categoryMap[temp] = categoryMap[temp] + amount;

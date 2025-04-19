@@ -23,6 +23,8 @@ from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
 from rest_framework.status import HTTP_201_CREATED, HTTP_400_BAD_REQUEST
 from django.db import connection
 from .sendimagetoAPI import extract_text_from_image
+from django.views.decorators.csrf import csrf_protect
+from django.utils.decorators import method_decorator
 # from pprint import pprint
 
 
@@ -73,6 +75,12 @@ class chatAssistantView(APIView):
         messages = client.beta.threads.messages.list(thread_id = thread.id)
         # print(response3.content)
         print(messages.data[0].content[0].text.value)
+
+
+        totalOfSale = [] #this is for adding transaction
+
+
+
         if run.status == "completed":
             response = Response({"response": markdown_to_text(unidecode(messages.data[0].content[0].text.value))}, status=200)
             response.set_cookie(
@@ -80,7 +88,7 @@ class chatAssistantView(APIView):
                 value=thread.id,
                 httponly=True,
                 secure=True,
-                samesite="Lax",
+                samesite="Strict",
                 path="/",
                 expires=datetime.datetime.now(datetime.UTC) + datetime.timedelta(days=7)
             )
@@ -146,14 +154,32 @@ class chatAssistantView(APIView):
                 if tool.function.name == "add_transaction":
                     print("add_transaction")
                     function_args = json.loads(tool.function.arguments)
+                    if("total" in function_args["transaction_name"].lower() or "tend" in function_args["transaction_name"].lower()):
+                        tool_response = "This is not a valid transaction name" + str(function_args)
+                        tool_outputs.append(
+                            {
+                            "tool_call_id": tool.id,
+                            "output": tool_response
+                            }
+                        )
+                        continue
+                    # totalOfSale = []
                     # print(type(function_args))
-                    # print("function_args", function_args)
-                    with connection.cursor() as cursor:
-                        # "createTransaction", [date, vendor_name, amount, category, accountID]
-                        cursor.callproc("createTransaction", [function_args["transaction_date"], function_args["transaction_name"], float(function_args["amount"]), function_args["category_id"], accountID])
-                        cursor.fetchall()
-                        while cursor.nextset():
-                            pass
+                    print("function_args", function_args)
+                    inTotalOfSale = False
+                    for transaction in totalOfSale:
+                        if ((transaction["vendor_name"] == function_args["vendor_name"] and transaction["transaction_date"] == function_args["transaction_date"] and transaction["category_id"] == function_args["category_id"]) 
+                        or (function_args["category_id"] == "Tax" and transaction["vendor_name"] == function_args["vendor_name"] and transaction["transaction_date"] == function_args["transaction_date"])):
+                            inTotalOfSale = True
+                            transaction["amount"] += float(function_args["amount"])
+                            break
+                    if inTotalOfSale == False:
+                        totalOfSale.append({"vendor_name": function_args["vendor_name"], "transaction_date": function_args["transaction_date"], "amount": float(function_args["amount"]), "category_id": function_args["category_id"]})
+                    # if (function_args["vendor_name"] in totalOfSale and totalOfSale[function_args["vendor_name"]]["transaction_date"] == function_args["transaction_date"]
+                    # and function_args["category_id"] == function_args["category_id"]):
+                    #     totalOfSale[function_args["vendor_name"]]["amount"] += float(function_args["amount"])
+                    # else:
+                    #     totalOfSale[function_args["vendor_name"]] = {"amount": float(function_args["amount"]), "category_id": function_args["category_id"], "transaction_date": function_args["transaction_date"]}
                     tool_response = "Transaction added successfully: " + str(function_args)
                     tool_outputs.append(
                         {
@@ -167,6 +193,15 @@ class chatAssistantView(APIView):
                     run_id=run.id,
                     tool_outputs=tool_outputs
                 )
+
+                if totalOfSale:
+                    with connection.cursor() as cursor:
+                        for transaction in totalOfSale:
+                            # cursor.callproc("createTransaction", [function_args["transaction_date"], function_args["transaction_name"], float(function_args["amount"]), function_args["category_id"], accountID])
+                            cursor.callproc("createTransaction", [transaction["transaction_date"], transaction["vendor_name"], float(transaction["amount"]), transaction["category_id"], accountID])
+                            cursor.fetchall()
+                            while cursor.nextset():
+                                pass
             except Exception as e:
                 print(e)
                 print("Error - in exception")
@@ -183,7 +218,7 @@ class chatAssistantView(APIView):
                     value=thread.id,
                     httponly=True,
                     secure=True,
-                    samesite="Lax",
+                    samesite="Strict",
                     path="/",
                     expires=datetime.datetime.now(datetime.UTC) + datetime.timedelta(days=7)
                 )
@@ -214,7 +249,7 @@ class getThreadMessageView(APIView):
                 value=thread_id,
                 httponly=True,
                 secure=True,
-                samesite="Lax",
+                samesite="Strict",
                 path="/",
                 expires=datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=7)
             )
@@ -251,7 +286,7 @@ class deleteThreadView(APIView):
             value=thread_id,
             httponly=True,
             secure=True,
-            samesite="Lax",
+            samesite="Strict",
             path="/",
             expires=datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=7)
         )
@@ -353,6 +388,85 @@ def loginAccount(request):
 
 #end of login account API request
 
+class UsernameChangeView(APIView):
+    #     userData = get_object_or_404(User, username=username)
+    # serializer = UserSerializer(userData,many=False)
+
+    # if not check_password(password, serializer.data['password']):
+    #     return Response({'error': 'invalid password'}, status = 401)
+    def post(self, request):
+        authenticate_user(request)
+        data = request.data
+        
+        password = data.get('password')
+        account_id = int(request.COOKIES.get('account_id_hashed')[0])
+        username = data.get("username")
+        if User.objects.filter(username=username).exists():
+            return Response({'error': 'Username already exists'}, status=HTTP_400_BAD_REQUEST)
+        if len(username) < 4:
+            return Response({'error': 'Username ≥ 4 chars'}, status=HTTP_400_BAD_REQUEST)
+        if User.objects.filter(id=account_id).exists():
+            user = get_object_or_404(User, id=account_id)
+            serializer = UserSerializer(user,many=False)
+
+            if not check_password(password, serializer.data['password']):
+                return Response({'error': 'invalid password'}, status = 401)
+            
+            user.username = username
+            user.save()
+        else:
+            return Response({"error": "User not found"}, status=404)
+        return Response({"response": "Username changed"}, status=200)
+    
+class EmailChangeView(APIView):
+    def post(self, request):
+        authenticate_user(request)
+        data = request.data
+        password = data.get('password')
+        account_id = int(request.COOKIES.get('account_id_hashed')[0])
+        email = data.get('email')
+        if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
+            return Response({'error': 'Invalid email address'}, status=HTTP_400_BAD_REQUEST)
+        if User.objects.filter(id=account_id).exists():
+            # user = User.objects.get(id=account_id)
+            user = get_object_or_404(User, id=account_id)
+            serializer = UserSerializer(user,many=False)
+
+            if not check_password(password, serializer.data['password']):
+                return Response({'error': 'invalid password'}, status = 401)
+            user.email = email
+            user.save()
+        else:
+            return Response({"error": "User not found"}, status=404)
+        return Response({"response": "Email changed"}, status=200)
+    
+class PasswordChangeView(APIView):
+    def post(self, request):
+        authenticate_user(request)
+        data = request.data
+        account_id = int(request.COOKIES.get('account_id_hashed')[0])
+        old_pass = data.get('password')
+        password = data.get('newPassword')
+        print(password)
+        if len(password) < 8:
+            return Response({'error': 'Password ≥ 8 chars'}, status=HTTP_400_BAD_REQUEST)
+        password = make_password(password)
+        print(password)
+        if User.objects.filter(id=account_id).exists():
+            user = get_object_or_404(User, id=account_id)
+            serializer = UserSerializer(user,many=False)
+
+            if not check_password(old_pass, serializer.data['password']):
+                return Response({'error': 'invalid password'}, status = 401)
+            user = User.objects.get(id=account_id)
+            user.password = password
+            # user.se
+            user.save()
+        else:
+            return Response({"error": "User not found"}, status=404)
+        return Response({"response": "Password changed"}, status=200)
+    
+
     
 @api_view(['POST'])
 def registerAccount(request):
@@ -393,6 +507,7 @@ def logoutAccount(request):
     # response.delete_cookie('account_id')
     response.delete_cookie('access_token')
     response.delete_cookie('account_id_hashed')
+    response.delete_cookie('thread_id')
     return response
 
 class AuthenticateView(APIView):
@@ -424,7 +539,7 @@ class AuthenticateView(APIView):
                             value=str(refresh.access_token),
                             httponly=True,
                             secure=True,
-                            samesite="Lax",
+                            samesite="Strict",
                             path="/",
                             max_age=timedelta(days=15)
                         )

@@ -1,6 +1,6 @@
 from django.urls import path, include
 from .views import (chatAssistantView, getThreadMessageView, deleteThreadView, CreateBudgetView, GetAllUserBudgetsView, GetUsernameView,
-DeleteTransactionView, DeleteBudgetView)# Ensure this is the correct import for your view class
+DeleteTransactionView, DeleteBudgetView, UsernameChangeView, EmailChangeView, PasswordChangeView)# Ensure this is the correct import for your view class
 from . import views
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
@@ -20,6 +20,10 @@ urlpatterns = [
     path("deleteThread/", deleteThreadView.as_view(), name="chat_delete_thread"),
 
     path('getUsername/', GetUsernameView.as_view(), name="get_username"),
+    path('changeUsername/', UsernameChangeView.as_view(), name="change_username"),
+    path('changeEmail/', EmailChangeView.as_view(), name="change_email"),
+    path('changePassword/', PasswordChangeView.as_view(), name="change_password"),
+
     path('registerAccount/',views.registerAccount),
     path('loginAccount/',views.loginAccount),
     path('logoffAccount/',views.logoutAccount),

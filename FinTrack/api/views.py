@@ -268,7 +268,7 @@ class QuickAnalysisView(APIView):
             if len(sample) == 0:
                 return Response({"error": "No data found"}, status=400)
             
-            output = get_userData_analysis(sample)
+            output = unidecode(get_userData_analysis(sample))
             
             response = Response({"response": output}, status=200)
             

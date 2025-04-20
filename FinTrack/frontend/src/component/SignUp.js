@@ -108,10 +108,10 @@ const SignUp = () => {
             py: 1, // Vertical padding
           }}
         >
-          Login
+          Sign Up
         </Button>
         <Typography variant="caption" gutterBottom sx={{textAlign: 'center', mt: 2, height: '0.6em', color: '#0077b6'}}>
-            Already have an account? <u style={{cursor: 'pointer'}} onClick={()=>navigate("/")}>SIGN UP</u>
+            Already have an account? <u style={{cursor: 'pointer'}} onClick={()=>navigate("/")}>LOGIN</u>
         </Typography>
       </form>
       </Card>

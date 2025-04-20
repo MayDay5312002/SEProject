@@ -556,7 +556,11 @@ def registerAccount(request):
 
 
         hashedPassword = make_password(password)
-        User.objects.create(username=username, password=hashedPassword, email=email)
+        User.objects.create(username=username, password=hashedPassword, email=email, is_active=0)
+
+        # after creation of account we need to send a verification email 
+
+        
         return Response({'success': 'User created'}, status=HTTP_201_CREATED)
 
     except Exception as e:

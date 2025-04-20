@@ -358,17 +358,29 @@ def loginAccount(request):
     data = json.loads(request.body)
     username = data.get('username')
     password = data.get('password')
+    isEmail = False
     
     #Check if the account exist in the first place
     if not User.objects.filter(username=username).exists():
-        return Response({"error": "Account does not exist"}, status=404)
+        if not User.objects.filter(email=username).exists():
+            return Response({"error": "Account does not exist"}, status=404)
+        else:
+            isEmail = True
+    
+    
     
     # attempt to grab user records
-    userData = get_object_or_404(User, username=username)
+    print(isEmail)
+    if isEmail:
+        userData = get_object_or_404(User, email=username)
+    else:
+        userData = get_object_or_404(User, username=username)
     serializer = UserSerializer(userData,many=False)
 
     if not check_password(password, serializer.data['password']):
         return Response({'error': 'invalid password'}, status = 401)
+    
+    username = serializer.data['username']
 
     #Account exist and correct password so overall valid credentials
    

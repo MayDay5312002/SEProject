@@ -4,6 +4,7 @@ import requests
 from datetime import datetime, timedelta
 import pandas as pd
 from typing import Dict, List
+from tika import parser
 
 class FinancialAnalyticsAPI:
     """
@@ -45,7 +46,7 @@ class FinancialAnalyticsAPI:
         5. Comparison to previous periods if available
         6. Recommendations for budget optimization
         
-        Format the response in a clear and concise manner.
+        Format the response in a clear and concise manner. If the User purchases data is not finiancial data, please respond with "No financial data provided."
         """
     
     def analyze_finances(self, 
@@ -117,3 +118,70 @@ class FinancialAnalyticsAPI:
         now = datetime.now()
         year = now.year
         return self.analyze_finances(purchases, f"year-to-date ({year})")
+    def filter_purchases_by_date(self, 
+                               purchases: List[Dict], 
+                               start_date: str = None, 
+                               end_date: str = None) -> List[Dict]:
+        """
+        Filter purchases by date range.
+        
+        Args:
+            purchases: List of purchase dictionaries
+            start_date: Start date string in 'YYYY-MM-DD' format
+            end_date: End date string in 'YYYY-MM-DD' format
+            
+        Returns:
+            Filtered list of purchases
+        """
+        if not start_date and not end_date:
+            return purchases
+            
+        filtered = []
+        
+        for purchase in purchases:
+            purchase_date = purchase.get('date')
+            if not purchase_date:
+                continue
+                
+            if start_date and purchase_date < start_date:
+                continue
+                
+            if end_date and purchase_date > end_date:
+                continue
+                
+            filtered.append(purchase)
+            
+        return filtered
+    
+    def load_purchases_from_csv(agent, filepath) -> List[Dict]:
+        """
+        Load purchase data from a CSV file.
+
+        Expected CSV format:
+        date,amount,category,vendor
+        2025-04-01,120.50,Groceries,Whole Foods
+        ...
+
+        Returns:
+            List of purchase dictionaries
+        """
+
+        # print("from agent:", filepath)
+        # print("rat:", rat)
+        try:
+            df = pd.read_csv(filepath)
+            # Convert DataFrame to list of dictionaries
+            purchases = df.to_dict('records')
+            return purchases
+        except Exception as e:
+            print(f"Error loading CSV file: {e}")
+            return []
+    
+    def load_purchases_any_type(filepath: str) -> str:
+        try:
+            parser = parser.from_file(filepath)
+            return parser['content']
+        except Exception as e:
+            print(f"Error loading file: {e}")
+            raise e
+        

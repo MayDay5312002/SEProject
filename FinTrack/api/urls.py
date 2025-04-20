@@ -1,6 +1,6 @@
 from django.urls import path, include
 from .views import (chatAssistantView, getThreadMessageView, deleteThreadView, CreateBudgetView, GetAllUserBudgetsView, GetUsernameView,
-DeleteTransactionView, DeleteBudgetView, UsernameChangeView, EmailChangeView, PasswordChangeView)# Ensure this is the correct import for your view class
+DeleteTransactionView, DeleteBudgetView, UsernameChangeView, EmailChangeView, PasswordChangeView, QuickAnalysisView)# Ensure this is the correct import for your view class
 from . import views
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
@@ -23,6 +23,8 @@ urlpatterns = [
     path('changeUsername/', UsernameChangeView.as_view(), name="change_username"),
     path('changeEmail/', EmailChangeView.as_view(), name="change_email"),
     path('changePassword/', PasswordChangeView.as_view(), name="change_password"),
+
+    path('quickAnalyze/', QuickAnalysisView.as_view(), name="quick_analysis"),
 
     path('registerAccount/',views.registerAccount),
     path('loginAccount/',views.loginAccount),

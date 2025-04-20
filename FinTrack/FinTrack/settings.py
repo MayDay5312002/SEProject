@@ -158,7 +158,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
-    "SIGNING_KEY": "TDXVMWwH1sJHO_pcNLQU0oMmZ7oNvuSjk-wSk_ieLkimNXm9jSKQqRsLtmxsZOyFr_c6qrW-Ce5qJMd0dJWc-A",
+    "SIGNING_KEY": os.getenv("SIGNING_KEY"),
     # "TOKEN_OBTAIN_SERIALIZER": "linkedInProj.serializers.CustomTokenObtainPairSerializer",
     "AUTH_COOKIE_SECURE": True,  
     # "ROTATE_REFRESH_TOKENS": True,

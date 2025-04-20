@@ -14,6 +14,8 @@ import ChartDashboard from "../other-components/ChartDashboard";
 import AttachFileIcon from '@mui/icons-material/AttachFile';
 import CategoryProgressBars from "../other-components/CategoryProgressBars";
 import BasicModalBudget from "../other-components/BasicModalBudget";
+import ModalQuickAnalyzation from "../other-components/ModalQuickAnalyzation";
+
 const months = {
     0: "January",
     1: "February",
@@ -520,7 +522,9 @@ function MainApp() {
                 </TableContainer>
               </Paper>
             </Box>
+            <ModalQuickAnalyzation />
         </div>
+
 
         {/* This is the the chatbot */}
         <div style={{backgroundColor: "#90e0ef", zIndex:1000}}>

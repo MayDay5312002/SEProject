@@ -25,6 +25,9 @@ from django.db import connection
 from .sendimagetoAPI import extract_text_from_image
 from django.views.decorators.csrf import csrf_protect
 from django.utils.decorators import method_decorator
+from .claude_analyzer_agent import FinancialAnalyticsAPI
+import pandas as pd
+from tika import parser
 # from pprint import pprint
 
 
@@ -232,6 +235,54 @@ class chatAssistantView(APIView):
             print(run.status)
             return Response({"error": "Error"}, status=500)
         
+
+class QuickAnalysisView(APIView):
+    def post(self, request):
+        authenticate_user(request)
+        accountID = int(request.COOKIES.get("account_id_hashed")[0])
+        file = request.FILES.get("file")
+        if not file:
+            return Response({"error": "No file uploaded"}, status=400)
+        if file: 
+            file_path = os.path.join("uploads", file.name)  # or any subfolder in MEDIA_ROOT
+            saved_path = default_storage.save(file_path, ContentFile(file.read()))
+            # print("Saved path:", saved_path, type(saved_path))
+
+            agent = FinancialAnalyticsAPI(claude)
+            # if "xlsx" in file.name:
+            #     try:
+            #         df = pd.read_csv(saved_path)
+            #         # Convert DataFrame to list of dictionaries
+            #         sample = df.to_dict('records')
+                    
+            #     except Exception as e:
+            #         print(e)
+            #         return Response({"error": "Error"}, status=500)
+            # else:
+            try:
+                parsed = parser.from_file(saved_path)
+                sample = parsed['content']
+            except Exception as e:
+                print(f"Error loading file: {e}")
+                raise e
+            if len(sample) == 0:
+                return Response({"error": "No data found"}, status=400)
+            
+            output = get_userData_analysis(sample)
+            
+            response = Response({"response": output}, status=200)
+            
+            default_storage.delete(saved_path)
+
+            return response
+            
+        
+        
+
+
+
+
+
 
 class getThreadMessageView(APIView):
     '''

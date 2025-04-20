@@ -23,8 +23,6 @@ from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
 from rest_framework.status import HTTP_201_CREATED, HTTP_400_BAD_REQUEST
 from django.db import connection
 from .sendimagetoAPI import extract_text_from_image
-from django.views.decorators.csrf import csrf_protect
-from django.utils.decorators import method_decorator
 from .claude_analyzer_agent import FinancialAnalyticsAPI
 import pandas as pd
 from tika import parser
@@ -59,12 +57,18 @@ class chatAssistantView(APIView):
         thread = request.COOKIES.get("thread_id", None)
         file = request.FILES.get("file")
         if file: 
-            print("File received")
-            print(file.name)
+            # print("File received")
+            # print(file.name)
             file_path = os.path.join("uploads", file.name)  # or any subfolder in MEDIA_ROOT
             saved_path = default_storage.save(file_path, ContentFile(file.read()))
-            print("File saved at:", saved_path)
-            textImage = "This is the extracted and processed file:\n"+extract_text_from_image(claude, saved_path, "claude-3-7-sonnet-20250219")
+            # print("File saved at:", saved_path)
+            image_extensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'tiff', 'tif']
+            print(saved_path.split('.')[-1])
+            if saved_path.split('.')[-1].strip() in image_extensions:
+                extractedResponse = "This is the extracted and processed file:\n"+extract_text_from_image(claude, saved_path, "claude-3-7-sonnet-20250219")
+            else:
+                parsed = parser.from_file(saved_path)
+                extractedResponse = "This is the extracted and processed file:\n"+parsed['content']
             default_storage.delete(saved_path)
             # print(textImage)
             
@@ -73,7 +77,7 @@ class chatAssistantView(APIView):
             thread = client.beta.threads.create().id
         thread = client.beta.threads.retrieve(thread_id=thread)
 
-        message = client.beta.threads.messages.create(thread_id=thread.id, role="user", content= (textImage+"::++\n\n"+user_message) if file else user_message)
+        message = client.beta.threads.messages.create(thread_id=thread.id, role="user", content= (extractedResponse+"::++\n\n"+user_message) if file else user_message)
         run = client.beta.threads.runs.create_and_poll(thread_id=thread.id, assistant_id=assistant)
         messages = client.beta.threads.messages.list(thread_id = thread.id)
         # print(response3.content)
@@ -440,11 +444,6 @@ def loginAccount(request):
 #end of login account API request
 
 class UsernameChangeView(APIView):
-    #     userData = get_object_or_404(User, username=username)
-    # serializer = UserSerializer(userData,many=False)
-
-    # if not check_password(password, serializer.data['password']):
-    #     return Response({'error': 'invalid password'}, status = 401)
     def post(self, request):
         authenticate_user(request)
         data = request.data
@@ -478,6 +477,8 @@ class EmailChangeView(APIView):
         email = data.get('email')
         if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
             return Response({'error': 'Invalid email address'}, status=HTTP_400_BAD_REQUEST)
+        if User.objects.filter(email=email).exists():
+            return Response({'error': 'Email already exists'}, status=HTTP_400_BAD_REQUEST)
         if User.objects.filter(id=account_id).exists():
             # user = User.objects.get(id=account_id)
             user = get_object_or_404(User, id=account_id)
@@ -532,6 +533,8 @@ def registerAccount(request):
 
         if User.objects.filter(username=username).exists():
             return Response({'error': 'Username already exists'}, status=HTTP_400_BAD_REQUEST)
+        if User.objects.filter(email=email).exists():
+            return Response({'error': 'Email already exists'}, status=HTTP_400_BAD_REQUEST)
         if len(username) < 4:
             return Response({'error': 'Username ≥ 4 chars'}, status=HTTP_400_BAD_REQUEST)
         if len(password) < 8:

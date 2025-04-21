@@ -53,7 +53,7 @@ class chatAssistantView(APIView):
     def post(self, request):
         authenticate_user(request)
         user_message = request.data.get("message", "")
-        accountID = int(request.COOKIES.get("account_id_hashed")[0])
+        accountID = int(request.COOKIES.get("account_id_hashed")[:int(request.COOKIES.get("id_info"))])
         thread = request.COOKIES.get("thread_id", None)
         file = request.FILES.get("file")
         if file: 
@@ -243,7 +243,7 @@ class chatAssistantView(APIView):
 class QuickAnalysisView(APIView):
     def post(self, request):
         authenticate_user(request)
-        accountID = int(request.COOKIES.get("account_id_hashed")[0])
+        accountID = int(request.COOKIES.get("account_id_hashed")[:int(request.COOKIES.get("id_info"))])
         file = request.FILES.get("file")
         if not file:
             return Response({"error": "No file uploaded"}, status=400)
@@ -426,14 +426,14 @@ def loginAccount(request):
                 max_age=timedelta(days=15),
                 samesite='Strict'
             )
-            # response.set_cookie(
-            #     'account_id',
-            #     serializer.data['id'],
-            #     httponly=True,
-            #     secure=True,
-            #     max_age=timedelta(days=15),
-            #     samesite='Strict'
-            # )
+            response.set_cookie(
+                'id_info',
+                len(str(serializer.data['id'])),
+                httponly=True,
+                secure=True,
+                max_age=timedelta(days=15),
+                samesite='Strict'
+            )
 
             response.set_cookie(
                 'account_id_hashed',
@@ -461,7 +461,7 @@ class UsernameChangeView(APIView):
         data = request.data
         
         password = data.get('password')
-        account_id = int(request.COOKIES.get('account_id_hashed')[0])
+        account_id = int(request.COOKIES.get('account_id_hashed')[:request.COOKIES.get("id_info")])
         username = data.get("username")
         if User.objects.filter(username=username).exists():
             return Response({'error': 'Username already exists'}, status=HTTP_400_BAD_REQUEST)
@@ -485,7 +485,7 @@ class EmailChangeView(APIView):
         authenticate_user(request)
         data = request.data
         password = data.get('password')
-        account_id = int(request.COOKIES.get('account_id_hashed')[0])
+        account_id = int(request.COOKIES.get('account_id_hashed')[:request.COOKIES.get("id_info")])
         email = data.get('email')
         if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
             return Response({'error': 'Invalid email address'}, status=HTTP_400_BAD_REQUEST)
@@ -508,7 +508,7 @@ class PasswordChangeView(APIView):
     def post(self, request):
         authenticate_user(request)
         data = request.data
-        account_id = int(request.COOKIES.get('account_id_hashed')[0])
+        account_id = int(request.COOKIES.get('account_id_hashed')[:request.COOKIES.get("id_info")])
         old_pass = data.get('password')
         password = data.get('newPassword')
         print(password)
@@ -582,8 +582,8 @@ class AuthenticateView(APIView):
         refresh_token = request.COOKIES.get("refresh_token")
         # account_id = request.COOKIES.get("account_id")
         account_id_hashed = request.COOKIES.get("account_id_hashed")
-        account_id = int(account_id_hashed[0])
-        account_id_hashed = account_id_hashed[1:]
+        account_id = int(account_id_hashed[:int(request.COOKIES.get("id_info"))])
+        account_id_hashed = account_id_hashed[int(request.COOKIES.get("id_info")):]
         if not check_hashed_account_id(account_id, account_id_hashed):
             raise Response({"error": "Invalid account id"}, status=401)
         print("access token", access_token)
@@ -639,7 +639,7 @@ def addTransaction(request):
         max_age=timedelta(days=15), 
         samesite='Strict'
     )
-    accountID = int(request.COOKIES.get("account_id_hashed")[0]) 
+    accountID = int(request.COOKIES.get("account_id_hashed")[:int(request.COOKIES.get("id_info"))]) 
     # Make a copy of request.data because it's immutable
     category = request.data.get('category')
     amount = float(request.data.get('amount'))
@@ -777,7 +777,7 @@ def getUserTransactions(request):
         max_age=timedelta(days=15), 
         samesite='Strict'
     )
-    accountID = int(request.COOKIES.get("account_id_hashed")[0]) #account id cookie
+    accountID = int(request.COOKIES.get("account_id_hashed")[:int(request.COOKIES.get("id_info"))]) #account id cookie
 
     with connection.cursor() as cursor:
         cursor.callproc("getAllTransaction", [accountID])
@@ -790,7 +790,7 @@ def getUserTransactions(request):
 
 class CreateBudgetView(APIView):
     def post(self, request):
-        account_id = int(request.COOKIES.get("account_id_hashed")[0])
+        account_id = int(request.COOKIES.get("account_id_hashed")[:int(request.COOKIES.get("id_info"))])
         response = Response(status=200)
         new_access_token = authenticate_user(request)
         response.set_cookie(
@@ -822,7 +822,7 @@ class GetAllUserBudgetsView(APIView):
             max_age=timedelta(days=15), 
             samesite='Strict'
         )
-        account_id = int(request.COOKIES.get("account_id_hashed")[0])
+        account_id = int(request.COOKIES.get("account_id_hashed")[:int(request.COOKIES.get("id_info"))])
         with connection.cursor() as cursor:
             cursor.callproc("getAllBudget", [account_id])
             headers = [col[0] for col in cursor.description]
@@ -844,7 +844,7 @@ class GetUsernameView(APIView):
             max_age=timedelta(days=15), 
             samesite='Strict'
         )
-        username = User.objects.filter(id=int(request.COOKIES.get("account_id_hashed")[0]))
+        username = User.objects.filter(id=int(request.COOKIES.get("account_id_hashed")[:int(request.COOKIES.get("id_info"))]))
         username = username.first().username if username.exists() else None
         if username is None:
             return Response({"error": "User not found"}, status=404)
@@ -855,7 +855,7 @@ class DeleteTransactionView(APIView):
     def post(self, request):
         response = Response(status=200)
         new_access_token = authenticate_user(request)
-        account_id = int(request.COOKIES.get("account_id_hashed")[0])
+        account_id = int(request.COOKIES.get("account_id_hashed")[:int(request.COOKIES.get("id_info"))])
         response.set_cookie(
             'access_token',
             new_access_token,
@@ -876,7 +876,7 @@ class DeleteBudgetView(APIView):
     def post(self, request):
         response = Response(status=200)
         new_access_token = authenticate_user(request)
-        account_id = int(request.COOKIES.get("account_id_hashed")[0])
+        account_id = int(request.COOKIES.get("account_id_hashed")[:int(request.COOKIES.get("id_info"))])
         response.set_cookie(
             'access_token',
             new_access_token,
@@ -899,9 +899,9 @@ def authenticate_user(request):
     refresh_token = request.COOKIES.get("refresh_token")
     # account_id = request.COOKIES.get("account_id")
     account_id_hashed = request.COOKIES.get("account_id_hashed")
-    account_id = int(account_id_hashed[0])
+    account_id = int(account_id_hashed[:int(request.COOKIES.get("id_info"))])
     print(account_id)
-    account_id_hashed = account_id_hashed[1:]
+    account_id_hashed = account_id_hashed[int(request.COOKIES.get("id_info")):]
     if not check_hashed_account_id(account_id, account_id_hashed):
         raise Exception("Invalid account id")
     

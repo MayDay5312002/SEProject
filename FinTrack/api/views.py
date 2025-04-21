@@ -629,7 +629,7 @@ class AuthenticateView(APIView):
 # "requires a bearer token that authetnicates this "
 @api_view(['POST'])
 def addTransaction(request):
-    response = Response(status=200)
+    response = Response(status=200) 
     new_access_token = authenticate_user(request)
     response.set_cookie(
         'access_token',

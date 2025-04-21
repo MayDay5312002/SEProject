@@ -26,6 +26,7 @@ urlpatterns = [
 
     path('quickAnalyze/', QuickAnalysisView.as_view(), name="quick_analysis"),
 
+    path('sendEmail',views.sendEmail),
     path('registerAccount/',views.registerAccount),
     path('loginAccount/',views.loginAccount),
     path('logoffAccount/',views.logoutAccount),

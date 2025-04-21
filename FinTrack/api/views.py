@@ -40,6 +40,12 @@ client = openai.OpenAI()
 assistant = os.getenv("AI_ASSISTANT_KEY")
 claude = os.getenv("anthropic_api")
 
+from dotenv import load_dotenv
+import os
+
+# Load variables from .env file into the environment
+load_dotenv()
+
 
 def markdown_to_text(md):
     # Remove headings
@@ -560,7 +566,7 @@ def registerAccount(request):
 
         # after creation of account we need to send a verification email 
 
-        
+
         return Response({'success': 'User created'}, status=HTTP_201_CREATED)
 
     except Exception as e:
@@ -933,4 +939,37 @@ def check_hashed_account_id(account_id: int, account_id_hashed: str) -> bool:
     hashed_value = hashlib.sha256(num_value.encode()).hexdigest()
     return hashed_value == account_id_hashed
     
+
+
+
+@api_view(['POST'])
+def sendEmail(request):
+    import os
+    from sendgrid import SendGridAPIClient
+    from sendgrid.helpers.mail import Mail
+
+    # generate JWT token within the email
+
+    # link would be to a different view that would verification of account
+    message = Mail(
+        from_email='stayonbusinessonly@gmail.com',
+        to_emails='Jamestngo02@gmail.com',
+        subject='FinTrack account activation',
+        html_content='<h1>Password Reset </h1>'
+        '<h3>If you\'ve lost your password or wish to reset it, use the link below to get started</h3>'
+        '<a href="http://127.0.0.1:8000/">activate account </a>'
+        '<p>If you did not request a password reset , you can safely ignore this email. Only a person with access to your email can reset your account password.</p>'
+        )
+    try:
+        
+        sg = SendGridAPIClient(os.environ.get('SENDGRID_API_KEY'))
+        response = sg.send(message)
+        print(response.status_code)
+        print(response.body)
+        print(response.headers)
+        return Response({"message": "attempt to send email!"}, status=200)
+    except Exception as e:
+        print(e.message)
+        return Response({"error" :"something went wrong"}, status=500)
+
 

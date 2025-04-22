@@ -3,7 +3,7 @@ import { TextField, InputLabel, Button, Typography, Card } from "@mui/material";
 import axios from "axios";
 import {useNavigate} from "react-router-dom";
 
-const Forgot = () => {
+const ForgotPasswordEmail = () => {
     
     const [email, setEmail] = useState("");
 
@@ -19,23 +19,21 @@ const Forgot = () => {
       const handleSubmit = async (e) => {
         e.preventDefault(); 
         try{
-          const response = await axios.post("http://127.0.0.1:8000/api/sendForgetPasswordEmail/", formData);
+            let body = {
+                "email" : email
+            }
+          const response = await axios.post("http://127.0.0.1:8000/api/sendForgetPasswordEmail/", body);
           console.log(response.data);
          
         }
         catch(error){
           //setErrorMsg("Invalid Credentials");
-          setErrorMsg(error.response.data.error);
+          //setErrorMsg(error.response.data.error);
           
           console.log(error);
         }
       };
-    
-      useEffect(()=>{
-        if(localStorage.getItem("isAuthenticated") === "true"){
-          navigate("/dashboard");
-        }
-      },[navigate])
+
 
     return(
         <div className="center">
@@ -83,4 +81,4 @@ const Forgot = () => {
     );
 }
 
-export default Forgot;
+export default ForgotPasswordEmail;

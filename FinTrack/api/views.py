@@ -18,7 +18,8 @@ from django.contrib.auth.hashers import make_password , check_password
 from django.http import JsonResponse
 from .serializers import UserSerializer
 from django.shortcuts import get_object_or_404 , redirect
-from datetime import timedelta, datetime
+# from datetime import timedelta, datetime
+from datetime import datetime, timedelta, timezone
 from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
 from rest_framework.status import HTTP_201_CREATED, HTTP_400_BAD_REQUEST
 from django.db import connection
@@ -958,30 +959,124 @@ def check_hashed_account_id(account_id: int, account_id_hashed: str) -> bool:
     
 
 
+@api_view(['POST'])
+def changePasswordRequest(request):
+    encodedToken = request.data.get('token')
+    password = request.data.get('password')
 
+    #decode the token encoded token
+    decodedToken = jwt.decode(encodedToken, os.getenv('SIGNING_KEY'), algorithms=["HS256"])
+
+    email = decodedToken.get('email')
+    accountID = decodedToken.get('accountID')
+    purpose = decodedToken.get('purpose')
+    expirationPeriodStr = decodedToken.get('expiration')
+    expirationPeriod = datetime.fromisoformat(expirationPeriodStr)
+    # expirationPeriod = datetime.datetime.fromisoformat(expirationPeriodStr)
+
+    userData = User.objects.filter(id=accountID).first()
+
+    if not userData:
+        return render(request, 'account_failed.html', {'email': email})
+        # return Response({'error': 'Account does not exist'}, status=404)
+    
+    # so seralizer because we know it exist 
+    serializer = UserSerializer(userData,many=False)
+    
+    # to prevent case sensitivity
+    if serializer.data['email'].lower() != email.lower():
+        return render(request, 'account_failed.html', {'email': email})
+        # return Response({'error': 'account is not register with this email'}, status=404)
+
+    # Check if current date is over the expiration date period 
+   
+    # datetime.datetime.utcnow()
+    # if  datetime.datetime.now(datetime.UTC) > expirationPeriod:
+    if datetime.now(timezone.utc) > expirationPeriod:
+        return render(request, 'account_failed.html', {'email': email})
+        # return Response({'error': 'activation link expired'}, status=498)
+    
+    # Check if purpose is tamper in terms of purpose of the token
+    elif purpose != 'Change Password':
+        return render(request, 'account_failed.html', {'email': email})
+        # return Response({'error': 'Invalid purpose'}, status=404)
+    
+    # request pass all test case so we can update the database 
+    # user id is_active to a 1 
+
+    userData.password = password
+    userData.save()
+
+    return Response({'message': 'password reset'}, status=200)
+
+    return render(request, 'account_activated.html', {'email': email})
+
+
+
+
+
+
+
+
+    
+
+
+# usecase : user forgets password sends link to the email
 @api_view(['POST'])
 def sendForgetPasswordEmail(request):
-    import os
-    from sendgrid import SendGridAPIClient
-    from sendgrid.helpers.mail import Mail
+    # import os
+    # from sendgrid import SendGridAPIClient
+    # from sendgrid.helpers.mail import Mail
 
     email = request.data.get('email')
-    accountID = request.data.get('id')
+
+    # grab user account 
+    userAccount = User.objects.filter(email=email).first()
+    serializer = UserSerializer(userAccount, many=False)
+
+    accountID = serializer.data['id']
+    purpose = "Change Password"
+
+    # expiration_dt = datetime.datetime.now(datetime.UTC) + datetime.timedelta(days=7)
+    #expiration_dt = datetime.now(timezone.utc) + timedelta(days=7)
+    # Then convert to string (for JSON)
+    #expiration_str = expiration_dt.isoformat()
+
+
+    expiration_dt = datetime.now(timezone.utc) + timedelta(days=7)
+
+    # Then convert to string (for JSON)
+    expiration_str = expiration_dt.isoformat()
+
+    tokenBody = {
+        "email" : email,
+        "accountID" : accountID,
+        "purpose" : purpose,
+        "expiration" : expiration_str
+    }
+
+    #decode the token 
+    encodeToken = jwt.encode(tokenBody , os.getenv("SIGNING_KEY"), algorithm="HS256")
+   
 
     
     # generate JWT token within the email
     # personalize jwt with purpose , email , and ID that would be pass from the body
 
-    # link would be to a different view that would verification of account
+    # link to page component to change password -> parameter of token as well
+    # on submision of the page use parameters as token verificaiton for another api 
     message = Mail(
         from_email='stayonbusinessonly@gmail.com',
-        to_emails='Jamestngo02@gmail.com',
-        subject='FinTrack account activation',
-        html_content='<h1>Forgot Password </h1>'
-        '<h3>If you\'ve lost your password or wish to reset it, use the link below to get started</h3>'
-        '<a href="http://127.0.0.1:8000/">activate account </a>'
-        '<p>If you did not request a password reset , you can safely ignore this email. Only a person with access to your email can reset your account password.</p>'
-        )
+        to_emails=email,
+        subject='FinTrack Password Reset',
+        html_content=f''' 
+        <h1>Forgot Password </h1>
+        <h3>If you\'ve lost your password or wish to reset it, use the link below to get started</h3>
+        <a href="http://127.0.0.1:8000/changePassword/?token={encodeToken}"> Reset Password </a>
+        <p>If you did not request a password reset , you can safely ignore this email. Only a person with access to your email can reset your account password.</p>
+        
+        '''
+    )
     try:
         
         sg = SendGridAPIClient(os.environ.get('SENDGRID_API_KEY'))
@@ -989,10 +1084,10 @@ def sendForgetPasswordEmail(request):
         print(response.status_code)
         print(response.body)
         print(response.headers)
-        return Response({"message": "attempt to send email!"}, status=200)
+        return Response({"message": "attempt to send forgot password email!"}, status=200)
     except Exception as e:
         print(e.message)
-        return Response({"error" :"something went wrong"}, status=500)
+        return Response({"error" :"Cannot send email"}, status=401)
 
 
 @api_view(['GET'])
@@ -1008,8 +1103,10 @@ def validateAccountActivationToken(request):
     accountID = decodedToken.get('accountID')
     purpose = decodedToken.get('purpose')
     expirationPeriodStr = decodedToken.get('expirationPeriod')
-    # expirationPeriod = datetime.fromisoformat(expirationPeriodStr)
-    expirationPeriod = datetime.datetime.fromisoformat(expirationPeriodStr)
+    expirationPeriod = datetime.fromisoformat(expirationPeriodStr)
+    # expirationPeriod = datetime.datetime.fromisoformat(expirationPeriodStr)
+
+
 
 
     # grab the record on the database for user registration
@@ -1036,7 +1133,8 @@ def validateAccountActivationToken(request):
     # Check if current date is over the expiration date period 
    
     # datetime.datetime.utcnow()
-    if  datetime.datetime.now(datetime.UTC) > expirationPeriod:
+    # if  datetime.datetime.now(datetime.UTC) > expirationPeriod:
+    if datetime.now(timezone.utc) > expirationPeriod:
         return render(request, 'account_failed.html', {'email': email})
         # return Response({'error': 'activation link expired'}, status=498)
     
@@ -1069,7 +1167,9 @@ def sendAccountActivationEmail(request):
    # Add timedelta first
     # expiration_dt = datetime.datetime.utcnow() + datetime.timedelta(days=1)
 
-    expiration_dt = datetime.datetime.now(datetime.UTC) + datetime.timedelta(days=7)
+    # expiration_dt = datetime.datetime.now(datetime.UTC) + datetime.timedelta(days=7)
+
+    expiration_dt = datetime.now(timezone.utc) + timedelta(days=7)
 
     # Then convert to string (for JSON)
     expiration_str = expiration_dt.isoformat()
@@ -1127,9 +1227,9 @@ def deleteEmail(request):
 
 @api_view(['GET'])
 def getAccount(request):
-    data = request.data.get('id')
+    data = request.data.get('email')
     
-    instance = User.objects.filter(id=data).first()
+    instance = User.objects.filter(email=data).first()
     serializer = UserSerializer(instance, many=False)
 
     return Response({'data': serializer.data}, status=200)

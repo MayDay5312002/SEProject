@@ -4,7 +4,7 @@ import { useState } from "react";
 import Login from "./Login";
 import MainPage from "./MainPage";
 import Signup from "./SignUp";
-import Forgot from "./Forgot";
+import ForgotPasswordEmail from "./ForgotPasswordEmail";
 import ChangePassword from "./ChangePassword";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
@@ -15,8 +15,8 @@ function App() {
                 <Route path="/" element={<Login />} />
                 <Route path="/dashboard" element={<MainPage />} />
                 <Route path="/signup" element={<Signup />} />
-                <Route path="/forgotPassword" element={<Forgot />} />
-                <Route path="/changePassword" element={<ChangePassword/>}/>
+                <Route path="/forgotPassword" element={<ForgotPasswordEmail />} />
+                <Route path="/changePassword/" element={<ChangePassword/>}/>
             </Routes>
         </Router>
     )

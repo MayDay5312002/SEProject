@@ -26,6 +26,8 @@ urlpatterns = [
 
     path('quickAnalyze/', QuickAnalysisView.as_view(), name="quick_analysis"),
 
+    path('changePasswordRequest/',views.changePasswordRequest),
+    path('sendForgetPasswordEmail/', views.sendForgetPasswordEmail),
     path('sendAccountActivationEmail/',views.sendAccountActivationEmail),
     path('validateAccountActivationToken/', views.validateAccountActivationToken),
     path('registerAccount/',views.registerAccount),

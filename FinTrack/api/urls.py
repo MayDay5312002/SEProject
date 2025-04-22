@@ -26,6 +26,10 @@ urlpatterns = [
 
     path('quickAnalyze/', QuickAnalysisView.as_view(), name="quick_analysis"),
 
+    path('changePasswordRequest/',views.changePasswordRequest),
+    path('sendForgetPasswordEmail/', views.sendForgetPasswordEmail),
+    path('sendAccountActivationEmail/',views.sendAccountActivationEmail),
+    path('validateAccountActivationToken/', views.validateAccountActivationToken),
     path('registerAccount/',views.registerAccount),
     path('loginAccount/',views.loginAccount),
     path('logoffAccount/',views.logoutAccount),
@@ -42,6 +46,8 @@ urlpatterns = [
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('token/verify/', TokenVerifyView.as_view(), name='token_verify'),
     path('authenticate/', views.AuthenticateView.as_view(), name='authenticate'),
+    path('deleteEmail',views.deleteEmail),
+    path('getAccount',views.getAccount)
 ]
 
 

@@ -30,7 +30,8 @@ const Login = () => {
       navigate("/dashboard");
     }
     catch(error){
-      setErrorMsg("Invalid Credentials");
+      //setErrorMsg("Invalid Credentials");
+      setErrorMsg(error.response.data.error);
       localStorage.setItem("isAuthenticated", "false");
       console.log(error);
     }
@@ -89,6 +90,11 @@ const Login = () => {
         </Button>
         <Typography variant="caption" gutterBottom sx={{textAlign: 'center', mt: 2, height: '0.6em', color: '#0077b6'}}>
             Need an account? <u style={{cursor: 'pointer'}} onClick={() => navigate("/signup")}>SIGN UP</u>
+        </Typography>
+        
+
+        <Typography variant="caption" gutterBottom sx={{textAlign: 'center', mt: 2, height: '0.6em', color: '#0077b6'}}>
+            <u style={{cursor: 'pointer'}} onClick={() => navigate("/forgotPassword")}>FORGOT PASSWORD</u>
         </Typography>
       </form>
       </Card>

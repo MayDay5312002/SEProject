@@ -7,7 +7,7 @@ const SignUp = () => {
   const [formData, setFormData] = useState({
     username: "",
     password: "",
-    emai: "",
+    email: "",
   });
   const [confirmPassword, setConfirmPassword] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
@@ -37,11 +37,35 @@ const SignUp = () => {
       const response = await axios.post("http://127.0.0.1:8000/api/registerAccount/", formData);
       console.log(response.data);
       navigate("/");
+
+
+      // response would include account ID and email asscociated with account
+
+      let responseData = response.data;
+      console.log(response)
+      let userId = responseData['user_account']['id'];
+      let userEmail = responseData['user_account']['email'];
+
+      let body = {
+        'id': userId,
+        'email': userEmail
+      }
+
+      const response1 = await axios.post("http://127.0.0.1:8000/api/sendAccountActivationEmail/", body);
+      console.log(response1.data);
+
+
+      // api to get the account ID 
+       
+
+      // Right after account creation send email out to activate their account 
+      
     }
     catch(error){
+      alert(error.response.data['error']);
       
-      setErrorMsg(error.response.data["error"]);
-    //   console.log(error);
+      // setErrorMsg(error.response.data["error"]);
+      console.log(error);
     //   console.log(error.response.data["error"]);
     }
   };
@@ -108,7 +132,7 @@ const SignUp = () => {
             py: 1, // Vertical padding
           }}
         >
-          Login
+          Sign Up
         </Button>
         <Typography variant="caption" gutterBottom sx={{textAlign: 'center', mt: 2, height: '0.6em', color: '#0077b6'}}>
             Already have an account? <u style={{cursor: 'pointer'}} onClick={()=>navigate("/")}>LOGIN</u>

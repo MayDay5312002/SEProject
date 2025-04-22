@@ -9,7 +9,9 @@ urlpatterns = [
     path('', index),
     path("dashboard/", index),
     path("signup/", index),
-    path("images/", index)
+    path("images/", index),
+    path("forgotPassword/",index),
+    path("changePassword/",index)
 
 ]
 

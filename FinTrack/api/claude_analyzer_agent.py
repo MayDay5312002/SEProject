@@ -28,7 +28,8 @@ class FinancialAnalyticsAPI:
         
     def _format_financial_data(self, 
                               purchases: List[Dict], 
-                              timeframe: str) -> str:
+                              timeframe: str,
+                              budgets: list[Dict] = []) -> str:
         """
         Format financial data for the API prompt.
         """
@@ -37,6 +38,8 @@ class FinancialAnalyticsAPI:
         Here is financial data for {timeframe}:
         
         User purchases: {purchases_str}
+
+        {f"Budgets: {budgets}" if budgets == [] else ""}
         
         Please analyze this financial data and provide:
         1. Breakdown of spending by category
@@ -51,7 +54,8 @@ class FinancialAnalyticsAPI:
     
     def analyze_finances(self, 
                          purchases: List[Dict], 
-                         timeframe: str = "current month") -> Dict:
+                         timeframe: str = "current month",
+                         budgets: list[Dict] = []) -> Dict:
         """
         Send financial data to Claude API and get analytics.
         
@@ -62,7 +66,7 @@ class FinancialAnalyticsAPI:
         Returns:
             Dictionary containing the financial analysis
         """
-        prompt = self._format_financial_data(purchases, timeframe)
+        prompt = self._format_financial_data(purchases, timeframe, budgets)
         
         payload = {
             "model": "claude-3-7-sonnet-20250219",
@@ -99,19 +103,19 @@ class FinancialAnalyticsAPI:
             
         return analysis_text
 
-    def get_current_month_data(self, purchases: List[Dict]) -> Dict:
+    def get_current_month_data(self, purchases: List[Dict], budgets=[]) -> Dict:
         """Get financial analytics for the current month."""
         now = datetime.now()
         current_month = now.strftime("%B %Y")
-        return self.analyze_finances(purchases, f"current month ({current_month})")
+        return self.analyze_finances(purchases, f"current month ({current_month})", budgets)
     
-    def get_previous_month_data(self, purchases: List[Dict]) -> Dict:
+    def get_previous_month_data(self, purchases: List[Dict], budgets=[]) -> Dict:
         """Get financial analytics for the previous month."""
         now = datetime.now()
         first_day = datetime(now.year, now.month, 1)
         last_month = first_day - timedelta(days=1)
         prev_month = last_month.strftime("%B %Y")
-        return self.analyze_finances(purchases, f"previous month ({prev_month})")
+        return self.analyze_finances(purchases, f"previous month ({prev_month})", budgets)
     
     def get_ytd_data(self, purchases: List[Dict]) -> Dict:
         """Get year-to-date financial analytics."""

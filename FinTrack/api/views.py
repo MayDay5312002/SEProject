@@ -140,8 +140,17 @@ class chatAssistantView(APIView):
                         results = [{headers[0]: row[0], headers[1]: row[1].strftime("%Y-%m-%d"), headers[2]: row[2], headers[3]: str(row[3]), headers[4]: categories[row[4]]} for row in results]
                         while cursor.nextset():
                             pass
+                        cursor.callproc("getAllBudget", [accountID])
+                        headers = [col[0] for col in cursor.description]
+                        budgets = cursor.fetchall()
+                        budgets = [{headers[1]: row[1], headers[3]: row[3]} for row in budgets]
+                        while cursor.nextset():
+                            pass
+                    
                         print(results)
-                    tool_response = get_userData_analysis(sample_purchases=results)
+                        print(budgets)
+
+                    tool_response = get_userData_analysis(sample_purchases=results, budgets=budgets)
                     tool_outputs.append(
                         {
                         "tool_call_id": tool.id,
@@ -251,27 +260,32 @@ class QuickAnalysisView(APIView):
             file_path = os.path.join("uploads", file.name)  # or any subfolder in MEDIA_ROOT
             saved_path = default_storage.save(file_path, ContentFile(file.read()))
             # print("Saved path:", saved_path, type(saved_path))
-
+            sample = ''
             agent = FinancialAnalyticsAPI(claude)
-            # if "xlsx" in file.name:
-            #     try:
-            #         df = pd.read_csv(saved_path)
-            #         # Convert DataFrame to list of dictionaries
-            #         sample = df.to_dict('records')
-                    
-            #     except Exception as e:
-            #         print(e)
-            #         return Response({"error": "Error"}, status=500)
-            # else:
-            try:
-                parsed = parser.from_file(saved_path)
-                sample = parsed['content']
-            except Exception as e:
-                print(f"Error loading file: {e}")
-                raise e
+            if(saved_path.split(".")[-1] in ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'tiff', 'tif']):
+                try:
+                    sample = extract_text_from_image(os.getenv("anthropic_api"), saved_path, "claude-3-7-sonnet-20250219")
+                    # print(sample)
+                except Exception as e:
+                    print(e)
+                    return Response({"error": "Error"}, status=500)
+            else:
+                try:
+                    parsed = parser.from_file(saved_path)
+                    sample = parsed['content']
+                except Exception as e:
+                    print(f"Error loading file: {e}")
+                    raise e
+            
             if len(sample) == 0:
                 return Response({"error": "No data found"}, status=400)
-            
+
+            # print(sample)
+            with connection.cursor() as cursor:
+                cursor.callproc("getAllBudget", [accountID])
+                headers = [col[0] for col in cursor.description]
+                budgets = cursor.fetchall()
+                budgets = [{headers[1]: row[1], headers[3]: row[3]} for row in budgets]
             output = unidecode(get_userData_analysis(sample))
             
             response = Response({"response": output}, status=200)

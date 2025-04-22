@@ -35,7 +35,7 @@ def get_news_today():
     
 
 # Example usage
-def get_userData_analysis(sample_purchases: List[Dict]) -> str:
+def get_userData_analysis(sample_purchases: List[Dict], budgets=[]) -> str:
     
     # Get the API key from environment variable or pass it directly
     # Example: export ANTHROPIC_API_KEY="your-api-key-here"
@@ -44,11 +44,11 @@ def get_userData_analysis(sample_purchases: List[Dict]) -> str:
     client = FinancialAnalyticsAPI()
     
     # Get current month analysis
-    current_month_analysis =  "Current Month Analysis:" + client.get_current_month_data(sample_purchases)
+    current_month_analysis =  "Current Month Analysis:" + client.get_current_month_data(sample_purchases, budgets)
     
     
     # Get YTD analysis
-    ytd_analysis ="\nYear-to-Date Analysis:\n" + client.get_ytd_data(sample_purchases)
+    ytd_analysis ="\n\n\nYear-to-Date Analysis:\n" + client.get_ytd_data(sample_purchases)
     print(current_month_analysis + ytd_analysis)
     return current_month_analysis + ytd_analysis
 

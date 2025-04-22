@@ -62,6 +62,7 @@ const SignUp = () => {
       
     }
     catch(error){
+      alert(error.response.data['error']);
       
       // setErrorMsg(error.response.data["error"]);
       console.log(error);

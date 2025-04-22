@@ -1004,7 +1004,8 @@ def changePasswordRequest(request):
     # request pass all test case so we can update the database 
     # user id is_active to a 1 
 
-    userData.password = password
+    hashedPassword = make_password(password)
+    userData.password = hashedPassword
     userData.save()
 
     return Response({'message': 'password reset'}, status=200)

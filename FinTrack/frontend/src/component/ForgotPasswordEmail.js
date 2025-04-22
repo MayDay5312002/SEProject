@@ -24,6 +24,7 @@ const ForgotPasswordEmail = () => {
             }
           const response = await axios.post("http://127.0.0.1:8000/api/sendForgetPasswordEmail/", body);
           console.log(response.data);
+          alert("attempt to send link to email if it exists");
          
         }
         catch(error){

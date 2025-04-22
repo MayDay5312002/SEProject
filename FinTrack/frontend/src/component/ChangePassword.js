@@ -1,7 +1,7 @@
 import React, {useState, useEffect} from "react";
 import { TextField, InputLabel, Button, Typography, Card } from "@mui/material";
 import axios from "axios";
-//import {useNavigate} from "react-router-dom";
+import {useNavigate} from "react-router-dom";
 import { useSearchParams } from 'react-router-dom';
 
 const ChangePassword = () => {

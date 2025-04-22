@@ -18,7 +18,7 @@ from django.contrib.auth.hashers import make_password , check_password
 from django.http import JsonResponse
 from .serializers import UserSerializer
 from django.shortcuts import get_object_or_404 , redirect
-# from datetime import timedelta, datetime
+from datetime import timedelta, datetime
 from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
 from rest_framework.status import HTTP_201_CREATED, HTTP_400_BAD_REQUEST
 from django.db import connection
@@ -376,8 +376,18 @@ def loginAccount(request):
             return Response({"error": "Account does not exist"}, status=404)
         else:
             isEmail = True
-    
-    
+
+    # grab records specifically is_active for that username
+    userRecord = User.objects.filter(username=username).first()
+    serializer = UserSerializer(userRecord, many=False)
+    userRecordData = serializer.data
+
+    userActiveStatus = userRecordData['is_active']
+
+    if userActiveStatus == 0:
+        return Response({'error': 'Activate account via email'}, status=401)
+
+
     
     # attempt to grab user records
     print(isEmail)
@@ -385,7 +395,7 @@ def loginAccount(request):
         userData = get_object_or_404(User, email=username)
     else:
         userData = get_object_or_404(User, username=username)
-    serializer = UserSerializer(userData,many=False)
+    # serializer = UserSerializer(userData,many=False)
 
     if not check_password(password, serializer.data['password']):
         return Response({'error': 'invalid password'}, status = 401)

@@ -379,24 +379,34 @@ def loginAccount(request):
             isEmail = True
 
     # grab records specifically is_active for that username
-    userRecord = User.objects.filter(username=username).first()
-    serializer = UserSerializer(userRecord, many=False)
-    userRecordData = serializer.data
+    # userRecord = User.objects.filter(username=username).first()
+    # serializer = UserSerializer(userRecord, many=False)
+    # userRecordData = serializer.data
 
-    userActiveStatus = userRecordData['is_active']
-
-    if userActiveStatus == 0:
-        return Response({'error': 'Activate account via email'}, status=401)
+    # userActiveStatus = userRecordData['is_active']
+    # print(userRecordData)
+    # if userActiveStatus == 0:
+    #     return Response({'error': 'Activate account via email'}, status=401)
 
 
     
     # attempt to grab user records
-    print(isEmail)
+    # print(isEmail)
     if isEmail:
-        userData = get_object_or_404(User, email=username)
+        userRecord = get_object_or_404(User, email=username)
     else:
-        userData = get_object_or_404(User, username=username)
+        userRecord = get_object_or_404(User, username=username)
     # serializer = UserSerializer(userData,many=False)
+
+
+    # userRecord = User.objects.filter(username=username).first()
+    serializer = UserSerializer(userRecord, many=False)
+    userRecordData = serializer.data
+
+    userActiveStatus = userRecordData['is_active']
+    print(userRecordData)
+    if userActiveStatus == 0:
+        return Response({'error': 'Activate account via email'}, status=401)
 
     if not check_password(password, serializer.data['password']):
         return Response({'error': 'invalid password'}, status = 401)

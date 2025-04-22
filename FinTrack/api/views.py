@@ -18,7 +18,7 @@ from django.contrib.auth.hashers import make_password , check_password
 from django.http import JsonResponse
 from .serializers import UserSerializer
 from django.shortcuts import get_object_or_404 , redirect
-from datetime import timedelta
+# from datetime import timedelta, datetime
 from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
 from rest_framework.status import HTTP_201_CREATED, HTTP_400_BAD_REQUEST
 from django.db import connection
@@ -28,6 +28,10 @@ import pandas as pd
 from tika import parser
 # from pprint import pprint
 
+import os
+from sendgrid import SendGridAPIClient    
+from sendgrid.helpers.mail import Mail
+import jwt
 
 
 
@@ -566,8 +570,11 @@ def registerAccount(request):
 
         # after creation of account we need to send a verification email 
 
+        userData = User.objects.filter(username=username).first()
+        serializer = UserSerializer(userData,many=False)
 
-        return Response({'success': 'User created'}, status=HTTP_201_CREATED)
+
+        return Response({'success': 'User created','user_account': serializer.data}, status=HTTP_201_CREATED)
 
     except Exception as e:
         print(e)
@@ -943,19 +950,24 @@ def check_hashed_account_id(account_id: int, account_id_hashed: str) -> bool:
 
 
 @api_view(['POST'])
-def sendEmail(request):
+def sendForgetPasswordEmail(request):
     import os
     from sendgrid import SendGridAPIClient
     from sendgrid.helpers.mail import Mail
 
+    email = request.data.get('email')
+    accountID = request.data.get('id')
+
+    
     # generate JWT token within the email
+    # personalize jwt with purpose , email , and ID that would be pass from the body
 
     # link would be to a different view that would verification of account
     message = Mail(
         from_email='stayonbusinessonly@gmail.com',
         to_emails='Jamestngo02@gmail.com',
         subject='FinTrack account activation',
-        html_content='<h1>Password Reset </h1>'
+        html_content='<h1>Activate Account </h1>'
         '<h3>If you\'ve lost your password or wish to reset it, use the link below to get started</h3>'
         '<a href="http://127.0.0.1:8000/">activate account </a>'
         '<p>If you did not request a password reset , you can safely ignore this email. Only a person with access to your email can reset your account password.</p>'
@@ -971,5 +983,146 @@ def sendEmail(request):
     except Exception as e:
         print(e.message)
         return Response({"error" :"something went wrong"}, status=500)
+
+
+@api_view(['GET'])
+def validateAccountActivationToken(request):
+
+    # data is passed in as a parameter
+    encodedToken = request.GET.get('token')
+
+    # decode the token 
+    decodedToken = jwt.decode(encodedToken, os.getenv('SIGNING_KEY'), algorithms=["HS256"])
+
+    email = decodedToken.get('email')
+    accountID = decodedToken.get('accountID')
+    purpose = decodedToken.get('purpose')
+    expirationPeriodStr = decodedToken.get('expirationPeriod')
+    # expirationPeriod = datetime.fromisoformat(expirationPeriodStr)
+    expirationPeriod = datetime.datetime.fromisoformat(expirationPeriodStr)
+
+
+    # grab the record on the database for user registration
+
+    userData = User.objects.filter(id=accountID).first()
+
+    if not userData:
+        return render(request, 'account_failed.html', {'email': email})
+        # return Response({'error': 'Account does not exist'}, status=404)
+    
+    # so seralizer because we know it exist 
+    serializer = UserSerializer(userData,many=False)
+
+    # check if the account is already activated
+    if serializer.data['is_active'] == 1:
+        return render(request, 'account_failed.html', {'email': email})
+        # return Response({'error' : 'Account has already been activated'}, status=404)
+    
+    # to prevent case sensitivity
+    if serializer.data['email'].lower() != email.lower():
+        return render(request, 'account_failed.html', {'email': email})
+        # return Response({'error': 'account is not register with this email'}, status=404)
+
+    # Check if current date is over the expiration date period 
+   
+    # datetime.datetime.utcnow()
+    if  datetime.datetime.now(datetime.UTC) > expirationPeriod:
+        return render(request, 'account_failed.html', {'email': email})
+        # return Response({'error': 'activation link expired'}, status=498)
+    
+    # Check if purpose is tamper in terms of purpose of the token
+    elif purpose != 'activate account':
+        return render(request, 'account_failed.html', {'email': email})
+        # return Response({'error': 'Invalid purpose'}, status=404)
+    
+    # request pass all test case so we can update the database 
+    # user id is_active to a 1 
+
+    userData.is_active = 1
+    userData.save()
+
+    return render(request, 'account_activated.html', {'email': email})
+
+
+
+
+
+@api_view(['POST'])
+def sendAccountActivationEmail(request):
+   
+
+    email = request.data.get('email')
+    accountID = request.data.get('id')
+    purpose = 'activate account'
+
+    # user have a day or 24 hours to activate their account , so set date as 24 hours from now 
+   # Add timedelta first
+    # expiration_dt = datetime.datetime.utcnow() + datetime.timedelta(days=1)
+
+    expiration_dt = datetime.datetime.now(datetime.UTC) + datetime.timedelta(days=7)
+
+    # Then convert to string (for JSON)
+    expiration_str = expiration_dt.isoformat()
+
+
+    body = {
+        'email' : email,
+        'accountID' : accountID,
+        'purpose' : purpose,
+        'expirationPeriod' : expiration_str
+    }
+
+    #encode the token 
+    encodeToken = jwt.encode(body , os.getenv("SIGNING_KEY"), algorithm="HS256")
+    
+    # generate JWT token within the email
+    # personalize jwt with purpose , email , and ID that would be pass from the body
+
+    # link would be to a different view that would verification of account
+    # adjust the api
+    message = Mail(
+    from_email='stayonbusinessonly@gmail.com',
+    to_emails=email,
+    subject='FinTrack account activation',
+    html_content=f'''
+        <h1>Activate Account</h1>
+        <h3>Hello, you have been added to the FinTrack system</h3>
+        <a href="http://127.0.0.1:8000/api/validateAccountActivationToken/?token={encodeToken}">Activate account</a>
+        <p>To enjoy the service, please click the "Activate Account" link above. The activation link is valid for one day and can only be used once.</p>
+    '''
+    )
+
+    try:
+        
+        sg = SendGridAPIClient(os.environ.get('SENDGRID_API_KEY'))
+        response = sg.send(message)
+        print(response.status_code)
+        print(response.body)
+        print(response.headers)
+        return Response({"message": "attempt to send email!"}, status=200)
+    except Exception as e:
+        print(e.message)
+        return Response({"error" :"something went wrong"}, status=500)
+    
+
+# delete my email
+@api_view(['POST'])
+def deleteEmail(request):
+    data = request.data.get('email')
+
+    instance = User.objects.filter(email=data).first()
+    instance.delete()
+
+    return Response({'comment':'deleted the email'},status=200)
+
+@api_view(['GET'])
+def getAccount(request):
+    data = request.data.get('id')
+    
+    instance = User.objects.filter(id=data).first()
+    serializer = UserSerializer(instance, many=False)
+
+    return Response({'data': serializer.data}, status=200)
+
 
 

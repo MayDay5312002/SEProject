@@ -977,7 +977,7 @@ def sendForgetPasswordEmail(request):
         from_email='stayonbusinessonly@gmail.com',
         to_emails='Jamestngo02@gmail.com',
         subject='FinTrack account activation',
-        html_content='<h1>Activate Account </h1>'
+        html_content='<h1>Forgot Password </h1>'
         '<h3>If you\'ve lost your password or wish to reset it, use the link below to get started</h3>'
         '<a href="http://127.0.0.1:8000/">activate account </a>'
         '<p>If you did not request a password reset , you can safely ignore this email. Only a person with access to your email can reset your account password.</p>'

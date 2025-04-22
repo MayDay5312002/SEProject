@@ -108,7 +108,8 @@ class chatAssistantView(APIView):
                 secure=True,
                 samesite="Strict",
                 path="/",
-                expires=datetime.datetime.now(datetime.UTC) + datetime.timedelta(days=7)
+                # expires=datetime.datetime.now(datetime.UTC) + datetime.timedelta(days=7)
+                max_age=timedelta(days=7)
             )
             # print(response["response"])
             return response
@@ -331,7 +332,8 @@ class getThreadMessageView(APIView):
                 secure=True,
                 samesite="Strict",
                 path="/",
-                expires=datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=7)
+                # expires=datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=7)
+                max_age=timedelta(days=7)
             )
             return newResponse
         url1 = f"https://api.openai.com/v1/threads/{thread_id}/messages"
@@ -368,7 +370,8 @@ class deleteThreadView(APIView):
             secure=True,
             samesite="Strict",
             path="/",
-            expires=datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=7)
+            # expires=datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=7)
+            max_age=timedelta(days=7)
         )
         return newResponse
 
@@ -661,8 +664,8 @@ class AuthenticateView(APIView):
                             path="/",
                             max_age=timedelta(days=15)
                         )
-                        with connection.cursor() as cursor:
-                            cursor.callproc("insertRefreshToken", [refresh_token, account_id])
+                        # with connection.cursor() as cursor:
+                        #     cursor.callproc("insertRefreshToken", [refresh_token, account_id])
                         return response
                     except Exception as e:
                         print("refresh token error", e)
@@ -989,7 +992,11 @@ def changePasswordRequest(request):
     password = request.data.get('password')
 
     #decode the token encoded token
-    decodedToken = jwt.decode(encodedToken, os.getenv('SIGNING_KEY'), algorithms=["HS256"])
+    try:
+        decodedToken = jwt.decode(encodedToken, os.getenv('SIGNING_KEY'), algorithms=["HS256"])
+    except Exception as e:
+        print(f"Error decoding token: {e}")
+        return Response("Invalid token", status=400)
 
     email = decodedToken.get('email')
     accountID = decodedToken.get('accountID')

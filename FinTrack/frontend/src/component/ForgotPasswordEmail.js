@@ -52,7 +52,7 @@ const ForgotPasswordEmail = () => {
         onSubmit={handleSubmit}
       >
         {/* Centered Typography */}
-        <Typography variant="h3" component="h3"sx={{ textAlign: "center", py: 1, fontWeight: 500 , mb: 3, color:"#0077b6"}}>
+        <Typography variant="h4" component="h3"sx={{ textAlign: "center", py: 1, fontWeight: 500 , mb: 3, color:"#0077b6"}}>
           Forgot Password
         </Typography>
 

@@ -74,15 +74,15 @@ const ChangePassword = () => {
         onSubmit={handleSubmit}
       >
         {/* Centered Typography */}
-        <Typography variant="h3" component="h3"sx={{ textAlign: "center", py: 1, fontWeight: 500 , mb: 3, color:"#0077b6"}}>
+        <Typography variant="h4" component="h3"sx={{ textAlign: "center", py: 1, fontWeight: 500 , mb: 3, color:"#0077b6"}}>
           Change Password
         </Typography>
 
         <InputLabel htmlFor="email" sx={{color: "#0077b6"}}>Password</InputLabel>
-        <TextField helperText=" " id="email" name="email" color="#03045e" value={password} onChange={(e) => { setPassword(e.target.value)}} sx={{width: '12em'}}/>
+        <TextField type="password" helperText=" " id="email" name="email" color="#03045e" value={password} onChange={(e) => { setPassword(e.target.value)}} sx={{width: '12em'}}/>
 
         <InputLabel htmlFor="email" sx={{color: "#0077b6"}}>Confirm Password</InputLabel>
-        <TextField helperText=" " id="email" name="email" color="#03045e" value={confirmPassword} onChange={(e) => { setConfirmPassword(e.target.value)}} sx={{width: '12em'}}/>
+        <TextField helperText=" " type="password" id="email" name="email" color="#03045e" value={confirmPassword} onChange={(e) => { setConfirmPassword(e.target.value)}} sx={{width: '12em'}}/>
 
         {/* dynamically hide or show error message */}
         <Typography variant="caption" gutterBottom sx={{textAlign: 'center', mt: 1, height: '0.6em', color: 'red'}}>

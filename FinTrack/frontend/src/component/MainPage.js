@@ -110,12 +110,12 @@ function MainPage() {
               letterSpacing: '0.01em',
               color: 'inherit',
               textDecoration: 'none',
-              fontSize: {xs: "1.5em", sm: "1.5em", md: "4.5vh"},
+              fontSize: {xs: "1.5em", sm: "1.5em", md: "4vh"},
               px: 2
               // cursor: 'pointer',
             }}
           >
-            <span style={{cursor: 'pointer'}} onClick={() => window.location.reload()}>FinTracker</span>
+            <span style={{cursor: 'pointer', fontSize: "1.5em"}} onClick={() => window.location.reload()}>FinTracker</span>
           </Typography>
 
 

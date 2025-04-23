@@ -248,7 +248,8 @@ class chatAssistantView(APIView):
                     secure=True,
                     samesite="Strict",
                     path="/",
-                    expires=datetime.datetime.now(datetime.UTC) + datetime.timedelta(days=7)
+                    # expires=datetime.datetime.now(datetime.UTC) + datetime.timedelta(days=7)
+                    max_age=timedelta(days=7)
                 )
                 # print(response["response"])
                 return response
@@ -509,7 +510,7 @@ class UsernameChangeView(APIView):
         data = request.data
         
         password = data.get('password')
-        account_id = int(request.COOKIES.get('account_id_hashed')[:request.COOKIES.get("id_info")])
+        account_id = int(request.COOKIES.get('account_id_hashed')[:int(request.COOKIES.get("id_info"))])
         username = data.get("username")
         if User.objects.filter(username=username).exists():
             return Response({'error': 'Username already exists'}, status=HTTP_400_BAD_REQUEST)
@@ -533,7 +534,7 @@ class EmailChangeView(APIView):
         authenticate_user(request)
         data = request.data
         password = data.get('password')
-        account_id = int(request.COOKIES.get('account_id_hashed')[:request.COOKIES.get("id_info")])
+        account_id = int(request.COOKIES.get('account_id_hashed')[:int(request.COOKIES.get("id_info"))])
         email = data.get('email')
         if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
             return Response({'error': 'Invalid email address'}, status=HTTP_400_BAD_REQUEST)
@@ -556,7 +557,7 @@ class PasswordChangeView(APIView):
     def post(self, request):
         authenticate_user(request)
         data = request.data
-        account_id = int(request.COOKIES.get('account_id_hashed')[:request.COOKIES.get("id_info")])
+        account_id = int(request.COOKIES.get('account_id_hashed')[:int(request.COOKIES.get("id_info"))])
         old_pass = data.get('password')
         password = data.get('newPassword')
         print(password)

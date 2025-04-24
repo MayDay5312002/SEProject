@@ -13,12 +13,13 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 from pathlib import Path
 from dotenv import load_dotenv
 import os
+from datetime import timedelta
 
 
 load_dotenv()#loading the .env file
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
-
+# BASE_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
@@ -29,14 +30,17 @@ SECRET_KEY = 'django-insecure-y0@b=6z3%9i4oy+)nmb0kwzm=((1m*7ay95klf$t(ns@8wvbd+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['locahost:', '127.0.0.1']
+ALLOWED_HOSTS = ['locahost', '127.0.0.1']
 
 CSRF_TRUSTED_ORIGINS = ["http://127.0.0.1", "http://localhost"]
 
 #FOR NOW
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True  # Allow CSRF cookies over HTTP
+CSRF_COOKIE_SAMESITE = 'Strict'
 CORS_ALLOW_ALL_ORIGINS = True ### FOR NOW
+
+# CSRF_COOKIE_HTTPONLY = False
 
 
 # Application definition
@@ -48,9 +52,12 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',
+    'rest_framework_simplejwt',
     'FinTrack',
     'api',
-    'frontend'
+    'frontend',
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
@@ -61,6 +68,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
 ]
 
 ROOT_URLCONF = 'FinTrack.urls'
@@ -136,7 +144,22 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
+# STATICFILES_DIRS = [os.path.join(BASE_DIR, "frontend", "static")]
+# 
+# 
+# STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
+
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+    "SIGNING_KEY": os.getenv("SIGNING_KEY"),
+    # "TOKEN_OBTAIN_SERIALIZER": "linkedInProj.serializers.CustomTokenObtainPairSerializer",
+    "AUTH_COOKIE_SECURE": True,  
+    # "ROTATE_REFRESH_TOKENS": True,
+}

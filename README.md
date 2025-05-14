@@ -1,4 +1,4 @@
-<h1>Software Engineering - CEN 4010 (FinTrack)</h1>
+<h1>Software Engineering - CEN 4010 Group Project(FinTrack)</h1>
 
 Prerequisites:
 -  python (preferably version 3.10)
